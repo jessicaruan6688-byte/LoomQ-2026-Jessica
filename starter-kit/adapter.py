@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
 """LoomQ submission adapter contract v1.0.
 
-This file intentionally contains no scoring implementation. Teams may implement
-the functions directly or delegate to another language/runtime with subprocess.
+Implements a unified OpenQASM 2.0 middle layer with SpinQ / OriginQ / Braket
+emitters and simulator runners. L2/L3 remain optional stubs.
 """
 
 from typing import Any, Dict, List, Tuple
 
+from loomq import compile_hybrid as _compile_hybrid
+from loomq import run_circuit, transpile_circuit
 
 SUPPORTED_TARGETS = ("spinq", "originq", "braket")
 
 
 def transpile(qasm_str: str, target: str) -> str:
     """Translate OpenQASM 2.0 into the target backend's native representation."""
-    raise NotImplementedError("Implement transpile(qasm_str, target)")
+    return transpile_circuit(qasm_str, target)
 
 
 def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
     """Execute a circuit and return the unified result schema from the rules."""
-    raise NotImplementedError("Implement run(qasm_str, target, shots)")
+    return run_circuit(qasm_str, target, shots)
 
 
 def agent_chat(prompt: str) -> str:
@@ -28,6 +30,4 @@ def agent_chat(prompt: str) -> str:
 
 def compile_hybrid(hybrid_qasm_str: str) -> Tuple[List[str], str]:
     """Optional L3 entry point. Return quantum operations and RISC-V assembly."""
-    raise NotImplementedError(
-        "L3 is optional; implement compile_hybrid(hybrid_qasm_str) to enter"
-    )
+    return _compile_hybrid(hybrid_qasm_str)

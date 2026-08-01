@@ -1,5 +1,5 @@
-# Public evaluator baseline: no third-party dependencies.
-# Add project dependencies below and pin every version exactly, for example:
-# amazon-braket-sdk==<tested-version>
-# spinqit==<tested-version>
-# pyqpanda==<tested-version>
+# Public evaluator baseline + pinned L1 simulator SDKs.
+# Versions chosen to avoid antlr4 conflicts (see upstream LoomQ issue #1).
+amazon-braket-sdk==1.50.0
+spinqit==0.2.4
+setuptools==69.5.1
