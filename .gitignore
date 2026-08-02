@@ -7,3 +7,7 @@ __pycache__/
 *.py[cod]
 
 .docker-verify-insurance/
+.env
+**/.env
+*.pem
+

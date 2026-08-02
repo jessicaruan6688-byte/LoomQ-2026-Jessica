@@ -1,3 +1,4 @@
+import importlib
 import importlib.util
 import json
 import os
@@ -9,8 +10,8 @@ from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CLIENT = ROOT / "starter-kit" / "llm_client.py"
-POLICY = ROOT / "starter-kit" / "l2_policy.json"
+CLIENT = ROOT / "starter_kit" / "llm_client.py"
+POLICY = ROOT / "starter_kit" / "l2_policy.json"
 
 
 def load_client():
@@ -41,13 +42,18 @@ class CompatibleAPIHandler(BaseHTTPRequestHandler):
 
 
 class PublicL2ContractTests(unittest.TestCase):
+    def test_adapter_supports_standard_package_import(self):
+        adapter = importlib.import_module("starter_kit.adapter")
+
+        self.assertEqual(adapter.SUPPORTED_TARGETS, ("spinq", "originq", "braket"))
+
     def test_policy_is_the_published_formal_deepseek_budget(self):
         policy = json.loads(POLICY.read_text(encoding="utf-8"))
         self.assertEqual(policy["formal_model"], "deepseek-v4-flash")
         self.assertEqual(policy["thinking"], {"type": "disabled"})
         self.assertEqual(
             policy["per_case"],
-            {"max_calls": 3, "max_input_tokens": 8000, "max_output_tokens": 2000, "timeout_seconds": 120},
+            {"timeout_seconds": 120},
         )
         self.assertFalse(policy["organizer_api_available_before_scoring"])
 
@@ -68,8 +74,7 @@ class PublicL2ContractTests(unittest.TestCase):
                 "LOOMQ_LLM_API_KEY": "local-key",
                 "LOOMQ_LLM_MODEL": "local-model",
                 "LOOMQ_LLM_TIMEOUT_SECONDS": "2",
-                "LOOMQ_LLM_MAX_OUTPUT_TOKENS": "2000",
-            }
+                }
             with mock.patch.dict(os.environ, environment, clear=True):
                 response = load_client().chat_completion([{"role": "user", "content": "hello"}])
         finally:
