@@ -1,16 +1,15 @@
 """Unified LoomQ result schema helpers.
 
-Bit order is normalised in exactly one place, here, because the backends and the
-competition schema disagree twice over:
+Backends disagree about bit order, so normalisation lives here:
 
-* SDKs key their counts by **qubit** index, leftmost character = ``q[0]``, and
-  they ignore the measure map, so ``measure q[1] -> c[0]`` still reports the bit
-  in q1's slot.
-* The unified schema is ``bit_order: "little"`` and keyed by **classical** bit,
-  so ``c[0]`` is the rightmost character and the measure map must be honoured.
+* SpinQ / Braket key counts by **qubit** index (leftmost = ``q[0]``) and ignore
+  the measure map. Use ``remap_counts``.
+* pyqpanda already returns **classical** little-endian keys that honour the
+  measure map. Use ``normalize_classical_counts`` — remapping those keys a
+  second time would corrupt them.
 
-Bell and GHZ are symmetric under bit reversal, which makes this class of bug
-invisible on the public circuits; every asymmetric circuit exposes it.
+Bell and GHZ are symmetric under bit reversal, so this class of bug is invisible
+on the public circuits; asymmetric and permuted-measure circuits expose it.
 """
 
 from __future__ import annotations
@@ -37,6 +36,19 @@ def _as_bitstring(key: Any, width: int) -> str:
     return cleaned
 
 
+def normalize_classical_counts(
+    counts: Mapping[Any, Any], n_bits: int
+) -> Dict[str, int]:
+    """Normalize keys that are already classical-bit little-endian."""
+    out: Dict[str, int] = {}
+    for key, value in counts.items():
+        bits = _as_bitstring(key, n_bits).zfill(n_bits)[-n_bits:]
+        if set(bits) - {"0", "1"}:
+            raise ValueError(f"cannot interpret counts key: {key!r}")
+        out[bits] = out.get(bits, 0) + int(value)
+    return out
+
+
 def remap_counts(
     counts: Mapping[Any, Any],
     *,
@@ -44,11 +56,7 @@ def remap_counts(
     n_qubits: int,
     measured: Sequence[Tuple[int, int]],
 ) -> Dict[str, int]:
-    """Rewrite qubit-indexed backend counts into little-endian classical bits.
-
-    ``measured`` holds ``(qubit_index, cbit_index)`` pairs taken from the circuit's
-    measure statements.
-    """
+    """Rewrite qubit-indexed backend counts into little-endian classical bits."""
     qubit_to_cbit: Dict[int, int] = {}
     for qubit_index, cbit_index in measured:
         qubit_to_cbit[qubit_index] = cbit_index

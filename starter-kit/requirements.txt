@@ -3,3 +3,4 @@
 amazon-braket-sdk==1.50.0
 spinqit==0.2.4
 setuptools==69.5.1
+pyqpanda==3.8.5

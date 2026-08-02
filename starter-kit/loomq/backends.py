@@ -13,7 +13,7 @@ from .emit import (
     emit_originir,
     emit_spinq_qasm2,
 )
-from .result import build_result, remap_counts, utc_now
+from .result import build_result, normalize_classical_counts, remap_counts, utc_now
 
 
 def _measure_map(circuit: Circuit) -> Tuple[int, List[Tuple[int, int]]]:
@@ -135,26 +135,28 @@ def run_originq(circuit: Circuit, shots: int) -> Dict[str, Any]:
             "Install with: pip install pyqpanda"
         ) from exc
 
-    # Prefer feeding OpenQASM 2 (spinq emitter) into pyqpanda converters;
-    # OriginIR string is still what transpile() returns for the contract.
+    # Feed OpenQASM 2 into pyqpanda; OriginIR remains what transpile() returns.
+    # pyqpanda already returns classical little-endian keys that honour the
+    # measure map, so remapping as if they were qubit-indexed would corrupt them.
     qasm2 = emit_spinq_qasm2(circuit)
     machine = pq.CPUQVM()
     machine.init_qvm()
     try:
-        if hasattr(pq, "convert_qasm_string_to_qprog"):
-            prog, _qreg, creg = pq.convert_qasm_string_to_qprog(qasm2, machine)
+        converted = pq.convert_qasm_string_to_qprog(qasm2, machine)
+        if isinstance(converted, (list, tuple)) and len(converted) >= 3:
+            prog, _qreg, creg = converted[0], converted[1], converted[2]
+        elif isinstance(converted, (list, tuple)):
+            prog = converted[0]
+            creg = machine.get_allocate_cbits()
         else:
-            prog = pq.convert_qasm_to_qprog(qasm2, machine)
-            creg = machine.qAlloc_many(0)  # placeholder; overwritten below
+            prog = converted
             creg = machine.get_allocate_cbits()
         raw = machine.run_with_configuration(prog, creg, shots)
     finally:
         machine.finalize()
 
-    n_bits, measured = _measure_map(circuit)
-    counts = remap_counts(
-        raw, n_bits=n_bits, n_qubits=circuit.n_qubits(), measured=measured
-    )
+    n_bits, _measured = _measure_map(circuit)
+    counts = normalize_classical_counts(raw, n_bits)
     return build_result(
         backend="originq_cpu_simulator",
         job_id=f"originq-sim-{abs(hash(qasm2)) % 10_000_000:07d}",
