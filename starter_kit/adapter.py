@@ -2,13 +2,14 @@
 """LoomQ submission adapter contract v1.0.
 
 Implements a unified OpenQASM 2.0 middle layer with SpinQ / OriginQ / Braket
-emitters and simulator runners. L2/L3 remain optional stubs.
+emitters and simulator runners, plus L2 agent_chat and L3 compile_hybrid.
 """
 
 from typing import Any, Dict, List, Tuple
 
 from loomq import compile_hybrid as _compile_hybrid
 from loomq import run_circuit, transpile_circuit
+from loomq.agent import agent_chat as _agent_chat
 
 SUPPORTED_TARGETS = ("spinq", "originq", "braket")
 
@@ -24,8 +25,8 @@ def run(qasm_str: str, target: str, shots: int) -> Dict[str, Any]:
 
 
 def agent_chat(prompt: str) -> str:
-    """Optional L2 entry point using the documented LOOMQ_LLM_* environment."""
-    raise NotImplementedError("L2 is optional; implement agent_chat(prompt) to enter")
+    """L2 entry point using the documented LOOMQ_LLM_* environment."""
+    return _agent_chat(prompt)
 
 
 def compile_hybrid(hybrid_qasm_str: str) -> Tuple[List[str], str]:
