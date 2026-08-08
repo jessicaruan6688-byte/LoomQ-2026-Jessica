@@ -2,6 +2,31 @@
 
 本工具包定义参赛提交协议，并提供公开自测。它不包含正式评分器、隐藏答案、Mock 得分路径或任何 Level 的参考解答。
 
+本仓库在官方骨架之上实现了：**统一 OpenQASM 中间层（L1）**、**自然语言 Agent（L2，可选）**、**Hybrid→RISC-V（L3）**。架构说明见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)；终局检查见 [`docs/FINAL_CHECKLIST.md`](docs/FINAL_CHECKLIST.md)。
+
+## 一分钟上手
+
+```bash
+# 1) Python 3.10 虚拟环境并安装锁定依赖
+pip install -r requirements.txt
+
+# 2) L1+L3 公开契约自测（按 submission.yaml 声明）
+PYTHONPATH=. python evaluator.py --level declared --target spinq,braket,originq
+
+# 3) L2 对话（需先复制 .env.example → .env 并填写 LOOMQ_LLM_*）
+PYTHONPATH=. python tools/l2_chat_cli.py
+
+# 4) 真机 Bell 证据（需对应云账号；空电路不算分）
+PYTHONPATH=. python tools/run_bell_evidence.py --platform originq
+```
+
+干净容器（与官方一致，评测根目录为本目录）：
+
+```bash
+docker build -t loomq-submission .
+docker run --rm loomq-submission
+```
+
 ## 提交结构
 
 ```text
@@ -22,6 +47,13 @@ starter_kit/
 ├── target_ir_contract.md
 ├── requirements.txt
 ├── Dockerfile
+├── docs/
+│   ├── ARCHITECTURE.md      # 工程叙事：架构与目标用户
+│   └── FINAL_CHECKLIST.md   # 终局提交自检
+├── tools/
+│   ├── l2_chat_cli.py
+│   └── run_bell_evidence.py
+├── loomq/                   # 统一中间层实现
 ├── evidence/
 │   ├── README.md
 │   └── files/                # 可选附件

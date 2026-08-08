@@ -8,9 +8,9 @@
 
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
-- [ ] L1 真机
-- [ ] L2 交互体验
-- [ ] 工程与产品化
+- [ ] L1 真机（**等有效 Bell 任务完成后再勾**）
+- [ ] L2 交互体验（**等 LOOMQ_LLM_* 实测后再勾**）
+- [x] 工程与产品化（材料已备；终局随 commit）
 - [ ] 自定义量子 RISC-V Bonus
 - [ ] 新手引导与视觉叙事 Bonus
 
@@ -18,77 +18,97 @@
 
 每个有效真机平台计 5 分，最多两个平台。模拟器不计真机分。每个平台复制并填写一次下面的信息：
 
-```text
-平台名称：[填写]
-平台 job ID：[填写]
-运行时间：[填写，带时区]
-shots：[填写]
-实际执行的 QASM：[填写仓库内路径]
-平台返回的原始结果：[填写仓库内路径]
-任务页截图：[选填，填写仓库内路径]
-```
+### 草稿：量旋（尚未达标 — 勿勾上方「L1 真机」）
 
-建议把文件放进 `evidence/files/`，比如：
+已确认存在连通任务，但 **电路为空，不计真机分**：
 
 ```text
-evidence/files/spinq-circuit.qasm
-evidence/files/spinq-result.json
-evidence/files/spinq-screenshot.png
+平台名称：量旋云 · 2比特核磁量子计算机
+平台 job ID：G-260802-0004
+任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61136
+运行时间：2026-08-02 22:27:23 ~ 22:30:11（页面显示，中国时区）
+shots：[未在有效 Bell 上取得]
+实际执行的 QASM：evidence/files/spinq-G-260802-0004-empty.qasm
+平台返回的原始结果：[缺 — 空电路无测量分布可用]
+任务页截图：evidence/files/spinq-G-260802-0004-empty-circuit-NOT-valid-hw.png
+判定：无效（无 h/cx，无 measure）
 ```
 
-工作人员会核对 job ID、运行时间、电路、shots 和原始结果。截图只能辅助说明，不能代替 job ID 和原始结果。
+### 待补：量旋有效 Bell（你下次能上真机时照抄提交）
+
+把下面填完，并把上方总开关改成 `[x]`：
+
+```text
+平台名称：量旋云 · [具体芯片名]
+平台 job ID：[新任务号，不是 G-260802-0004]
+运行时间：[带时区]
+shots：[例如 1024]
+实际执行的 QASM：evidence/files/spinq-bell.qasm
+平台返回的原始结果：evidence/files/spinq-bell-result.json
+任务页截图：evidence/files/spinq-bell-screenshot.png
+```
+
+电路模板已放在 `evidence/files/spinq-bell.TODO.qasm`（提交前改名为 `spinq-bell.qasm`）。
+
+### 待补：本源悟空（申请中）
+
+```text
+平台名称：本源悟空
+平台 job ID：[待填写]
+运行时间：[待填写]
+shots：[待填写]
+实际执行的 QASM：evidence/files/originq-bell.qasm
+平台返回的原始结果：evidence/files/originq-bell-result.json
+任务页截图：[选填]
+```
+
+申请进度：混合计算 / 悟空额度跟进中。华为机时可用于练习，**不替代**本源/量旋可溯源 job。
 
 ## L2 交互体验
 
-请填写：
+材料草稿（有 Key 实测前不要勾总开关）：
 
 ```text
-启动界面或 CLI 的命令：[填写]
-测试入口或页面地址：[填写，没有则写“无”]
+启动界面或 CLI 的命令：
+  cd starter_kit && python tools/l2_chat_cli.py
+  # 或一次性：PYTHONPATH=starter_kit python starter_kit/tools/l2_chat_cli.py '生成一个 3 比特 GHZ 态并全测量'
+测试入口或页面地址：无（CLI）
 适合现场体验的 3 个用户任务：
-1. [填写]
-2. [填写]
-3. [填写]
-截图或演示视频：[选填，填写仓库内路径或稳定只读链接]
+1. 生成 3 比特 GHZ 并全测量，确认回复含 OpenQASM 2.0
+2. 粘贴一段错误的贝尔代码（大写门名/缺寄存器）请 Agent 修好
+3. 问：15 比特、零排队，应选哪个后端（应出现能力表中的 simulator id）
+截图或演示视频：[选填]
 ```
-
-工作人员会在组委会统一模型环境中运行最终代码，测试新手是否看得懂、出错后能否得到有效帮助、结果是否清楚，以及多轮回答是否一致。选手自己的对话截图只用于说明产品流程，不直接证明得分。
 
 ## 工程与产品化
 
-已有内容可以直接引用主 README 或其他项目文档，不必复制到本目录。
-
 ```text
-干净环境中的构建和启动命令：[填写命令或文档路径]
-架构说明：[填写文档路径，或用几句话说明主要模块]
-目标用户和使用场景：[填写]
-完整使用流程：[填写文档、截图或演示路径]
+干净环境中的构建和启动命令：
+  docker build -t loomq-submission starter_kit
+  docker run --rm loomq-submission
+  # 或本地：
+  PYTHONPATH=starter_kit python starter_kit/evaluator.py --level declared --target spinq,braket,originq
+架构说明：starter_kit/docs/ARCHITECTURE.md
+目标用户和使用场景：不会三家 SDK 的开发者/产品同学；一份 QASM 或多后端 Agent，先模拟后真机
+完整使用流程：README「一分钟上手」+ docs/FINAL_CHECKLIST.md
 ```
-
-工作人员会按最终 commit 实际构建和启动，并检查文档与代码是否一致、产品是否真的降低了量子计算的使用门槛。
 
 ## 自定义量子 RISC-V Bonus
 
-以下三项必须齐全且测试通过，才获得 8 分：
-
 ```text
-指令编码规格：[填写文档路径]
-模拟器扩展实现：[填写代码路径]
-端到端测试命令：[填写命令或文档路径]
+指令编码规格：[未申报]
+模拟器扩展实现：[未申报]
+端到端测试命令：[未申报]
 ```
 
 ## 新手引导与视觉叙事 Bonus
 
-请填写已有材料的路径，不要求为评分另写一套文档：
-
 ```text
-零基础首次运行指南：[填写]
-量子概念解释：[填写]
-结果可视化：[填写]
-错误恢复或无障碍引导：[填写]
+零基础首次运行指南：README「一分钟上手」+ QUANTUM_101.md
+量子概念解释：QUANTUM_101.md
+结果可视化：[待补]
+错误恢复或无障碍引导：L2 CLI 错误回显 + agent 校验重试
 ```
-
-以上四项各 1 分。普通项目 README 完整不代表自动获得 Bonus。
 
 ## 提交规则
 
