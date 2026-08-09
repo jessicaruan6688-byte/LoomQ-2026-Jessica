@@ -8,7 +8,7 @@
 
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
-- [ ] L1 真机（**等有效 Bell 任务完成后再勾**）
+- [x] L1 真机（量旋 Bell 已跑通；本源仍待补第二平台）
 - [ ] L2 交互体验（**等 LOOMQ_LLM_* 实测后再勾**）
 - [x] 工程与产品化（材料已备；终局随 commit）
 - [ ] 自定义量子 RISC-V Bonus
@@ -18,37 +18,28 @@
 
 每个有效真机平台计 5 分，最多两个平台。模拟器不计真机分。每个平台复制并填写一次下面的信息：
 
-### 草稿：量旋（尚未达标 — 勿勾上方「L1 真机」）
-
-已确认存在连通任务，但 **电路为空，不计真机分**：
+### 量旋（有效 — Bell）
 
 ```text
 平台名称：量旋云 · 2比特核磁量子计算机
-平台 job ID：G-260802-0004
-任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61136
-运行时间：2026-08-02 22:27:23 ~ 22:30:11（页面显示，中国时区）
-shots：[未在有效 Bell 上取得]
-实际执行的 QASM：evidence/files/spinq-G-260802-0004-empty.qasm
-平台返回的原始结果：[缺 — 空电路无测量分布可用]
-任务页截图：evidence/files/spinq-G-260802-0004-empty-circuit-NOT-valid-hw.png
-判定：无效（无 h/cx，无 measure）
-```
-
-### 待补：量旋有效 Bell（你下次能上真机时照抄提交）
-
-把下面填完，并把上方总开关改成 `[x]`：
-
-```text
-平台名称：量旋云 · [具体芯片名]
-平台 job ID：[新任务号，不是 G-260802-0004]
-运行时间：[带时区]
-shots：[例如 1024]
+平台 job ID：G-260809-0018
+运行时间：创建 2026-08-09 11:13:59 → started 11:14:30 → ended 11:15:32（UTC+8）
+shots：结果页以投影概率为主展示（未在页头标明整数 shots；见 result JSON）
 实际执行的 QASM：evidence/files/spinq-bell.qasm
 平台返回的原始结果：evidence/files/spinq-bell-result.json
-任务页截图：evidence/files/spinq-bell-screenshot.png
+任务页截图：evidence/files/spinq-bell-hardware-result.png
+模拟对照截图：evidence/files/spinq-bell-sim-preview.png
+判定：有效（含 H、CNOT；实验柱主峰在 00/11）
 ```
 
-电路模板已放在 `evidence/files/spinq-bell.TODO.qasm`（提交前改名为 `spinq-bell.qasm`）。
+### 草稿：量旋空电路（无效对照，勿计分）
+
+```text
+平台 job ID：G-260802-0004
+实际执行的 QASM：evidence/files/spinq-G-260802-0004-empty.qasm
+任务页截图：evidence/files/spinq-G-260802-0004-empty-circuit-NOT-valid-hw.png
+判定：无效（无门）
+```
 
 ### 待补：本源悟空（申请中）
 

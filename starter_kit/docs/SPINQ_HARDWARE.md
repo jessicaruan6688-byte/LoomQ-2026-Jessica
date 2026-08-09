@@ -5,7 +5,20 @@
 ## 路 A：网页（你上次用的界面）
 
 1. 打开 https://cloud.spinq.cn → 新建线路（2 比特核磁即可）  
-2. 粘贴 `evidence/files/spinq-bell.TODO.qasm` 全文（含 `h` / `cx` / `measure`）  
+2. 网页编辑器粘贴下面全文（**不要写 `creg` / `measure`**：量旋网页常标红且不同步；全测量由平台在运行时做）：
+
+```qasm
+OPENQASM 2.0;
+include "qelib1.inc";
+qreg q[2];
+h q[0];
+cx q[0],q[1];
+```
+
+通过标准：左侧线路图出现 **H + CNOT**；下方模拟投影约 `00` / `11` 各一半。  
+（赛题证据仍须保留任务页结果；有门的 Bell 即有效，不要交空 `qreg`。）
+
+模板：`evidence/files/spinq-bell.TODO.qasm`  
 3. 提交运行，等到「运行成功」  
 4. 记录：任务号（如 `G-……`）、结束时间、shots、任务页 URL  
 5. 导出/复制投影概率或 counts；截图任务页  
