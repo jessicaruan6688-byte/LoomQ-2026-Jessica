@@ -29,9 +29,137 @@ def _measure_map(circuit: Circuit) -> Tuple[int, List[Tuple[int, int]]]:
     return n, [(index, index) for index in range(n)]
 
 
-def run_spinq(circuit: Circuit, shots: int) -> Dict[str, Any]:
+def _spinq_wants_cloud() -> bool:
+    mode = (os.environ.get("LOOMQ_SPINQ_MODE") or "local").strip().lower()
+    return mode in {"cloud", "qpu", "real", "nmr", "gemini"}
+
+
+def _compile_spinq_qasm(qasm: str) -> Any:
+    from spinqit import get_compiler
+
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".qasm", delete=False, encoding="utf-8"
+    )
     try:
-        from spinqit import BasicSimulatorConfig, get_basic_simulator, get_compiler
+        tmp.write(qasm)
+        tmp.close()
+        return get_compiler("qasm").compile(tmp.name, 0)
+    finally:
+        os.unlink(tmp.name)
+
+
+def _spinq_counts_from_result(result: Any, shots: int, n_bits: int) -> Dict[str, int]:
+    raw = getattr(result, "counts", None)
+    if raw:
+        return {str(key): int(value) for key, value in dict(raw).items()}
+    probs = getattr(result, "probabilities", None)
+    if not probs:
+        raise RuntimeError("spinqit result has neither counts nor probabilities")
+    # Scale probabilities into integer counts that sum exactly to shots.
+    items = [(str(key), float(value)) for key, value in dict(probs).items()]
+    total_p = sum(max(0.0, p) for _, p in items) or 1.0
+    scaled = [max(0.0, p) / total_p * shots for _, p in items]
+    floors = [int(v) for v in scaled]
+    remainders = sorted(
+        ((scaled[i] - floors[i], i) for i in range(len(floors))), reverse=True
+    )
+    missing = shots - sum(floors)
+    for _, index in remainders[:missing]:
+        floors[index] += 1
+    out: Dict[str, int] = {}
+    for (key, _), count in zip(items, floors):
+        if count:
+            out[key.zfill(n_bits)[-n_bits:]] = count
+    if sum(out.values()) != shots and out:
+        # Last-resort fix if floating dust remains.
+        first = next(iter(out))
+        out[first] += shots - sum(out.values())
+    return out
+
+
+def run_spinq_cloud(circuit: Circuit, shots: int) -> Dict[str, Any]:
+    """Submit to SpinQ Cloud when LOOMQ_SPINQ_MODE=cloud.
+
+    Requires cloud.spinq.cn account + SSH key registered on the platform:
+    LOOMQ_SPINQ_USERNAME, LOOMQ_SPINQ_KEYFILE (path to private key).
+    Optional: LOOMQ_SPINQ_PLATFORM (default gemini_vp for 2-qubit NMR).
+    """
+    try:
+        from spinqit import SpinQCloudConfig, get_spinq_cloud
+    except ImportError as exc:
+        raise ImportError(
+            "spinqit is required for SpinQ cloud. "
+            "Install with: pip install spinqit==0.2.4"
+        ) from exc
+
+    username = (os.environ.get("LOOMQ_SPINQ_USERNAME") or "").strip()
+    keyfile = (os.environ.get("LOOMQ_SPINQ_KEYFILE") or "").strip()
+    if not username or not keyfile:
+        raise RuntimeError(
+            "LOOMQ_SPINQ_MODE requests cloud but LOOMQ_SPINQ_USERNAME / "
+            "LOOMQ_SPINQ_KEYFILE are not set. Register an SSH public key on "
+            "https://cloud.spinq.cn and export the private key path."
+        )
+    if not os.path.isfile(keyfile):
+        raise FileNotFoundError(f"LOOMQ_SPINQ_KEYFILE not found: {keyfile}")
+
+    platform_name = (
+        os.environ.get("LOOMQ_SPINQ_PLATFORM") or "gemini_vp"
+    ).strip() or "gemini_vp"
+    qasm = emit_spinq_qasm2(circuit)
+    ir = _compile_spinq_qasm(qasm)
+
+    host = (os.environ.get("LOOMQ_SPINQ_HOST") or "").strip() or None
+    backend = (
+        get_spinq_cloud(username, keyfile, host=host)
+        if host
+        else get_spinq_cloud(username, keyfile)
+    )
+    platform = backend.get_platform(platform_name)
+    available = platform.available() if callable(getattr(platform, "available", None)) else getattr(platform, "available", False)
+    if not available:
+        raise RuntimeError(
+            f"SpinQ platform {platform_name!r} is not available right now"
+        )
+
+    config = SpinQCloudConfig()
+    config.configure_platform(platform_name)
+    config.configure_shots(shots)
+    task_name = os.environ.get("LOOMQ_SPINQ_TASK_NAME") or "loomq-bell"
+    task_desc = os.environ.get("LOOMQ_SPINQ_TASK_DESC") or "LoomQ hardware evidence"
+    config.configure_task(task_name, task_desc)
+
+    result = backend.execute(ir, config)
+    n_bits, measured = _measure_map(circuit)
+    raw_counts = _spinq_counts_from_result(result, shots, n_bits)
+    counts = remap_counts(
+        raw_counts, n_bits=n_bits, n_qubits=circuit.n_qubits(), measured=measured
+    )
+    job_id = (
+        getattr(result, "job_id", None)
+        or getattr(result, "task_id", None)
+        or getattr(result, "task_code", None)
+        or os.environ.get("LOOMQ_SPINQ_JOB_ID")
+        or f"spinq-cloud-{abs(hash(qasm)) % 10_000_000:07d}"
+    )
+    return build_result(
+        backend="spinq_cloud_qpu",
+        job_id=str(job_id),
+        shots=shots,
+        counts=counts,
+        meta={
+            "transpiled_gates": len(circuit.gate_ops()),
+            "qubits": circuit.n_qubits(),
+            "target_ir": "openqasm2",
+            "platform": platform_name,
+            "mode": "cloud",
+        },
+    )
+
+
+def run_spinq_local(circuit: Circuit, shots: int) -> Dict[str, Any]:
+    try:
+        from spinqit import BasicSimulatorConfig, get_basic_simulator
     except ImportError as exc:
         raise ImportError(
             "spinqit is required for target=spinq. "
@@ -39,16 +167,7 @@ def run_spinq(circuit: Circuit, shots: int) -> Dict[str, Any]:
         ) from exc
 
     qasm = emit_spinq_qasm2(circuit)
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".qasm", delete=False, encoding="utf-8"
-    )
-    try:
-        tmp.write(qasm)
-        tmp.close()
-        compiler = get_compiler("qasm")
-        ir = compiler.compile(tmp.name, 0)
-    finally:
-        os.unlink(tmp.name)
+    ir = _compile_spinq_qasm(qasm)
 
     engine = get_basic_simulator()
     config = BasicSimulatorConfig()
@@ -78,6 +197,12 @@ def run_spinq(circuit: Circuit, shots: int) -> Dict[str, Any]:
             "target_ir": "openqasm2",
         },
     )
+
+
+def run_spinq(circuit: Circuit, shots: int) -> Dict[str, Any]:
+    if _spinq_wants_cloud():
+        return run_spinq_cloud(circuit, shots)
+    return run_spinq_local(circuit, shots)
 
 
 def run_braket(circuit: Circuit, shots: int) -> Dict[str, Any]:

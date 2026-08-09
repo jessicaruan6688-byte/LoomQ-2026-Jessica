@@ -53,6 +53,8 @@ python3 starter_kit/prepare_submission.py --team-id jessicaruan6688-byte
 
 ## 真机证据（重要）
 
+操作卡：[`SPINQ_HARDWARE.md`](SPINQ_HARDWARE.md)（网页 Bell / SSH 云后端）。
+
 ### 无效例（勿再交这类）
 
 量旋 `G-260802-0004` / 页面 `taskResult/61136`：只有 `qreg`，**无门、无 measure** → 只证明账号连通，**不计 LoomQ 真机分**。

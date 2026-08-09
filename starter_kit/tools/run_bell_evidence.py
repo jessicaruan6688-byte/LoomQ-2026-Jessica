@@ -74,6 +74,16 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 2
+    if args.platform == "spinq" and not args.allow_simulator:
+        mode = (os.environ.get("LOOMQ_SPINQ_MODE") or "").strip().lower()
+        if mode not in {"cloud", "qpu", "real", "nmr", "gemini"}:
+            print(
+                "Set LOOMQ_SPINQ_MODE=cloud plus LOOMQ_SPINQ_USERNAME / "
+                "LOOMQ_SPINQ_KEYFILE for hardware evidence, or pass "
+                "--allow-simulator for a layout dry-run.",
+                file=sys.stderr,
+            )
+            return 2
 
     result = run(BELL, args.platform, args.shots)
     backend = str(result.get("backend", ""))
