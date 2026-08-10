@@ -8,11 +8,11 @@
 
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
-- [x] L1 真机（量旋 Bell 已跑通；本源仍待补第二平台）
+- [x] L1 真机（量旋双平台已齐：2q Bell + 3q GHZ；本源过审可加但不阻塞 10 分上限）
 - [ ] L2 交互体验（**等 LOOMQ_LLM_* 实测后再勾**）
 - [x] 工程与产品化（材料已备；终局随 commit）
-- [ ] 自定义量子 RISC-V Bonus
-- [ ] 新手引导与视觉叙事 Bonus
+- [ ] 自定义量子 RISC-V Bonus（**无真实扩展前勿勾**）
+- [ ] 新手引导与视觉叙事 Bonus（README + QUANTUM_101 已有底；终局前再勾）
 
 ## L1 真机
 
@@ -41,7 +41,21 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 判定：无效（无门）
 ```
 
-### 待补：本源悟空（申请中）
+### 量旋（有效 — GHZ-3 · 第二平台）
+
+```text
+平台名称：量旋云 · 3比特核磁量子计算机
+平台 job ID：S-260810-0001
+运行时间：created/ended 2026-08-10 11:30:16 → 11:32:42（UTC+8）
+shots：结果页以投影概率为主展示（未在页头标明整数 shots；见 result JSON）
+实际执行的 QASM：evidence/files/spinq-ghz3.qasm
+平台返回的原始结果：evidence/files/spinq-ghz3-result.json
+任务页截图：evidence/files/spinq-ghz3-hardware-result.png
+模拟对照截图：evidence/files/spinq-ghz3-sim-preview.png
+判定：有效（H + 两级 CNOT；实验主峰在 000/111，有 NISQ 泄漏）
+```
+
+### 待补：本源悟空（审核中 — 可选第三材料；人工真机分上限仍为两平台）
 
 ```text
 平台名称：本源悟空
@@ -53,7 +67,7 @@ shots：[待填写]
 任务页截图：[选填]
 ```
 
-申请进度：混合计算 / 悟空额度跟进中。华为机时可用于练习，**不替代**本源/量旋可溯源 job。
+申请进度：审核卡住中。华为机时可用于练习，**不替代**本源/量旋可溯源 job。
 
 ## L2 交互体验
 

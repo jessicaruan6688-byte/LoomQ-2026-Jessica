@@ -15,7 +15,7 @@
 | L1 | 三后端本地 + Docker 自检绿（已有私有验证记录） |
 | L3 | `compile_hybrid` 已接；测试 7/7 |
 | L2 | 仅当 DeepSeek/兼容 Key **真调用过公开样例** 后再勾 |
-| 真机 | 每平台：**有门 + measure 的 Bell**，可溯源 job_id + 原始结果 JSON |
+| 真机 | 两平台已齐：①量旋 2q Bell `G-260809-0018`；②量旋 3q GHZ `S-260810-0001`（本源过审仅作加成/保险） |
 
 ## `submission.yaml`（勾 L2 时必须改）
 
@@ -53,46 +53,45 @@ python3 starter_kit/prepare_submission.py --team-id jessicaruan6688-byte
 
 ## 真机证据（重要）
 
-操作卡：[`SPINQ_HARDWARE.md`](SPINQ_HARDWARE.md)（网页 Bell / SSH 云后端）。
+操作卡：[`SPINQ_HARDWARE.md`](SPINQ_HARDWARE.md)。
 
 ### 无效例（勿再交这类）
 
-量旋 `G-260802-0004` / 页面 `taskResult/61136`：只有 `qreg`，**无门、无 measure** → 只证明账号连通，**不计 LoomQ 真机分**。
+量旋 `G-260802-0004`：只有 `qreg`，**无门** → 不计真机分。  
+**全振幅模拟器**任务 → 不计真机分。
 
-### 有效最低标准
+### 平台二（现在就做）：3 比特核磁 GHZ
 
-```qasm
-OPENQASM 2.0;
-include "qelib1.inc";
-qreg q[2];
-creg c[2];
-h q[0];
-cx q[0],q[1];
-measure q -> c;
-```
+网页选 **3 比特核磁**，粘贴 `evidence/files/spinq-ghz3.TODO.qasm`（无 `measure`）。  
+模拟主峰约 `000`/`111` → 提交真机 → 截图 + job_id → 填 `evidence/README.md`。
 
-- 任务成功结束  
-- 保存：电路 QASM、平台原始结果、job_id、时间（含时区）、shots  
-- 截图可作辅证，不能代替 job_id + 原始结果  
-
-助手脚本（云模式可用时）：
+### L2 实测（并行）
 
 ```bash
-PYTHONPATH=starter_kit python starter_kit/tools/run_bell_evidence.py --platform originq
-# 或 spinq（待 SDK 真机路径打通后）
+cp starter_kit/.env.example starter_kit/.env
+# 填 LOOMQ_LLM_BASE_URL / API_KEY / MODEL（DeepSeek 例见 .env.example）
+PYTHONPATH=starter_kit python starter_kit/tools/l2_chat_cli.py '生成一个 3 比特 GHZ 态并全测量'
 ```
+
+通了再改 `submission.yaml`：`l2: true` **且** `network.required_for_l2: true`。
+
+### Bonus（并行，诚实勾）
+
+- 工程与产品化：已有 ARCHITECTURE + Docker 命令 — 终局可勾  
+- 新手引导：README「一分钟上手」+ QUANTUM_101 — 可勾  
+- 自定义 RISC-V：**没有独立指令规格+模拟器扩展+端到端测试就不要勾**（头部队在勾，评委仍会核）
 
 ### 关于华为云机时
 
-赛题真机分锚定 **量旋 / 本源（及相关竞赛后端）可溯源 job**。华为机时可用于练手，**一般不能替代** LoomQ 证据里的平台 job_id。本源「郑州+悟空」仍应继续跟申请。
+**不能替代**量旋/本源可溯源 job。本源审核可继续等，不挡量旋第二台。
 
 ## 证据包勾选前核对
 
 - [ ] `evidence/README.md` 对应项改成 `[x]` 且字段填满  
-- [ ] `evidence/files/` 内路径真实存在且进了终局 commit  
+- [ ] 两个真机平台（若申报 10 分）路径都在 `evidence/files/` 且进了终局 commit  
 - [ ] 无 API Key / Cookie  
 - [ ] 工程叙事指向 `docs/ARCHITECTURE.md` + README 复现命令  
-- [ ] L2 体验写明 CLI 启动命令与 3 个现场任务  
+- [ ] L2 体验写明 CLI 启动命令与 3 个现场任务（且已真调用过）  
 
 ## 泄露控制
 
