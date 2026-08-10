@@ -9,7 +9,7 @@
 把要申报项目的方框改成 `[x]`，并填写对应内容：
 
 - [x] L1 真机（量旋双平台已齐：2q Bell + 3q GHZ；本源过审可加但不阻塞 10 分上限）
-- [ ] L2 交互体验（**等 LOOMQ_LLM_* 实测后再勾**）
+- [x] L2 交互体验（DeepSeek `deepseek-v4-flash` 本地实测通：GHZ / 修 Bell / 15q 后端推荐）
 - [x] 工程与产品化（材料已备；终局随 commit）
 - [ ] 自定义量子 RISC-V Bonus（**无真实扩展前勿勾**）
 - [ ] 新手引导与视觉叙事 Bonus（README + QUANTUM_101 已有底；终局前再勾）
@@ -71,8 +71,6 @@ shots：[待填写]
 
 ## L2 交互体验
 
-材料草稿（有 Key 实测前不要勾总开关）：
-
 ```text
 启动界面或 CLI 的命令：
   cd starter_kit && python tools/l2_chat_cli.py
@@ -82,6 +80,10 @@ shots：[待填写]
 1. 生成 3 比特 GHZ 并全测量，确认回复含 OpenQASM 2.0
 2. 粘贴一段错误的贝尔代码（大写门名/缺寄存器）请 Agent 修好
 3. 问：15 比特、零排队，应选哪个后端（应出现能力表中的 simulator id）
+本地实测（2026-08-10，LOOMQ_LLM_MODEL=deepseek-v4-flash）：
+1. 通过 — 返回含 qreg q[3] 的 GHZ OpenQASM（含 measure）
+2. 通过 — 补全 OPENQASM 头/寄存器与 h/cx Bell
+3. 通过 — 回复含规范 id originq_local_simulator
 截图或演示视频：[选填]
 ```
 

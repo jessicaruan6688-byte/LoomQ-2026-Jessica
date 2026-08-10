@@ -14,7 +14,7 @@
 |---|---|
 | L1 | 三后端本地 + Docker 自检绿（已有私有验证记录） |
 | L3 | `compile_hybrid` 已接；测试 7/7 |
-| L2 | 仅当 DeepSeek/兼容 Key **真调用过公开样例** 后再勾 |
+| L2 | DeepSeek 本地实测已通；私有 `l2: true` + `required_for_l2: true`（公开终局再推） |
 | 真机 | 两平台已齐：①量旋 2q Bell `G-260809-0018`；②量旋 3q GHZ `S-260810-0001`（本源过审仅作加成/保险） |
 
 ## `submission.yaml`（勾 L2 时必须改）
