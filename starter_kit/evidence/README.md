@@ -23,6 +23,7 @@
 ```text
 平台名称：量旋云 · 2比特核磁量子计算机
 平台 job ID：G-260809-0018
+任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61210
 运行时间：创建 2026-08-09 11:13:59 → started 11:14:30 → ended 11:15:32（UTC+8）
 shots：结果页以投影概率为主展示（未在页头标明整数 shots；见 result JSON）
 实际执行的 QASM：evidence/files/spinq-bell.qasm
