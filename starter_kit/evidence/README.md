@@ -12,7 +12,7 @@
 - [x] L2 交互体验（DeepSeek `deepseek-v4-flash` 本地实测通：GHZ / 修 Bell / 15q 后端推荐）
 - [x] 工程与产品化（材料已备；终局随 commit）
 - [ ] 自定义量子 RISC-V Bonus（**无真实扩展前勿勾**）
-- [ ] 新手引导与视觉叙事 Bonus（README + QUANTUM_101 已有底；终局前再勾）
+- [x] 新手引导与视觉叙事 Bonus（README + QUANTUM_101 + 真机截图/投影图；无独立 RISC-V）
 
 ## L1 真机
 
@@ -46,6 +46,7 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 ```text
 平台名称：量旋云 · 3比特核磁量子计算机
 平台 job ID：S-260810-0001
+任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61216
 运行时间：created/ended 2026-08-10 11:30:16 → 11:32:42（UTC+8）
 shots：结果页以投影概率为主展示（未在页头标明整数 shots；见 result JSON）
 实际执行的 QASM：evidence/files/spinq-ghz3.qasm
@@ -112,9 +113,9 @@ shots：[待填写]
 
 ```text
 零基础首次运行指南：README「一分钟上手」+ QUANTUM_101.md
-量子概念解释：QUANTUM_101.md
-结果可视化：[待补]
-错误恢复或无障碍引导：L2 CLI 错误回显 + agent 校验重试
+量子概念解释：QUANTUM_101.md（Bell / 测量 / 多后端动机）
+结果可视化：evidence/files/spinq-bell-*-result.png、spinq-ghz3-*-result.png（实验 vs 模拟投影）
+错误恢复或无障碍引导：tools/l2_chat_cli.py 错误回显；agent 本地校验失败后最多重试 3 次
 ```
 
 ## 提交规则
