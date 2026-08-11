@@ -79,7 +79,7 @@ PYTHONPATH=starter_kit python starter_kit/tools/l2_chat_cli.py '生成一个 3 �
 
 - 工程与产品化：已有 ARCHITECTURE + Docker 命令 — 终局可勾  
 - 新手引导：README「一分钟上手」+ QUANTUM_101 — 可勾  
-- 自定义 RISC-V：**没有独立指令规格+模拟器扩展+端到端测试就不要勾**（头部队在勾，评委仍会核）
+- 自定义 RISC-V：**已实现** — 规格 `docs/LOOMQ_QISA_V1.md` + `riscv_emulator.py` QISA 扩展 + `tests/test_quantum_riscv_e2e.py`（evidence 已勾）
 
 ### 关于华为云机时
 

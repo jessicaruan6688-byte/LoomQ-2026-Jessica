@@ -11,7 +11,7 @@
 - [x] L1 真机（量旋双平台已齐：2q Bell + 3q GHZ；本源过审可加但不阻塞 10 分上限）
 - [x] L2 交互体验（DeepSeek `deepseek-v4-flash` 本地实测通：GHZ / 修 Bell / 15q 后端推荐）
 - [x] 工程与产品化（材料已备；终局随 commit）
-- [ ] 自定义量子 RISC-V Bonus（**无真实扩展前勿勾**）
+- [x] 自定义量子 RISC-V Bonus
 - [x] 新手引导与视觉叙事 Bonus（README + QUANTUM_101 + 真机截图/投影图；无独立 RISC-V）
 
 ## L1 真机
@@ -105,9 +105,9 @@ shots：[待填写]
 ## 自定义量子 RISC-V Bonus
 
 ```text
-指令编码规格：[未申报]
-模拟器扩展实现：[未申报]
-端到端测试命令：[未申报]
+指令编码规格：starter_kit/docs/LOOMQ_QISA_V1.md
+模拟器扩展实现：starter_kit/riscv_emulator.py（qinit/qh/qx/qcx/qmeas + assemble_quantum_word/decode_quantum_word；CUSTOM-0 opcode=0b0001011）
+端到端测试命令：PYTHONPATH=starter_kit python starter_kit/tests/test_quantum_riscv_e2e.py
 ```
 
 ## 新手引导与视觉叙事 Bonus
