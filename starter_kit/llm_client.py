@@ -12,13 +12,30 @@ import json
 import os
 import urllib.error
 import urllib.request
+from pathlib import Path
 from typing import Any
 
 
 REQUIRED_ENV = ("LOOMQ_LLM_BASE_URL", "LOOMQ_LLM_API_KEY", "LOOMQ_LLM_MODEL")
 
 
+def _load_dotenv() -> None:
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.is_file():
+        return
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def _configuration() -> tuple[str, str, str, float, int]:
+    _load_dotenv()
     missing = [name for name in REQUIRED_ENV if not os.environ.get(name)]
     if missing:
         raise RuntimeError("missing required LoomQ L2 environment variable(s): " + ", ".join(missing))
