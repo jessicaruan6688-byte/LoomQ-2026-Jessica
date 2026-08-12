@@ -84,11 +84,16 @@ shots：[待填写]
 1. 生成 3 比特 GHZ 并全测量，确认回复含 OpenQASM 2.0
 2. 粘贴一段错误的贝尔代码（大写门名/缺寄存器）请 Agent 修好
 3. 问：15 比特、零排队，应选哪个后端（应出现能力表中的 simulator id）
-本地实测（2026-08-10，LOOMQ_LLM_MODEL=deepseek-v4-flash）：
+本地实测（2026-08-10 CLI；2026-08-12 Web 截图，LOOMQ_LLM_MODEL=deepseek-v4-flash）：
 1. 通过 — 返回含 qreg q[3] 的 GHZ OpenQASM（含 measure）
 2. 通过 — 补全 OPENQASM 头/寄存器与 h/cx Bell
 3. 通过 — 回复含规范 id originq_local_simulator
-截图或演示视频：[选填]
+截图或演示视频：
+  - 启动界面：evidence/files/l2-web-ui-home.png
+  - 任务 1 GHZ：evidence/files/l2-web-ghz3-demo.png
+  - 任务 2 修 Bell：evidence/files/l2-web-bell-repair-demo.png
+  - 任务 3 15q 后端：evidence/files/l2-web-backend-15q-demo.png
+  （无演示视频；三张任务截图 + 启动页已覆盖 evidence 三项体验任务）
 ```
 
 ## 工程与产品化
