@@ -79,7 +79,13 @@ PYTHONPATH=starter_kit python starter_kit/tools/l2_chat_cli.py '生成一个 3 �
 
 - 工程与产品化：已有 ARCHITECTURE + Docker 命令 — 终局可勾  
 - 新手引导：README「一分钟上手」+ QUANTUM_101 — 可勾  
-- 自定义 RISC-V：**已实现** — 规格 `docs/LOOMQ_QISA_V1.md` + `riscv_emulator.py` QISA 扩展 + `tests/test_quantum_riscv_e2e.py`（evidence 已勾）
+- 自定义 RISC-V：**已实现并按 Q3 补机器码闭环** — 规格 `docs/LOOMQ_QISA_V1.md` + `load_machine_words` + `tests/test_quantum_riscv_e2e.py`
+
+### 主办方 Q&A 对照（2026-08 群同步）
+
+- **Q1** L2 门集：仅 OpenQASM 2.0 白名单 12 门（本仓 parser 已限制）。  
+- **Q2/Q4** 本源：维护期正常；可用 `WK_C180` / `WK_C180_2` 等动态后端，不必死盯旧名。额度开放时再补第二厂商材料（量旋双机已够 HW 上限）。  
+- **Q3** RISC-V Bonus：要第 1 种——编码进可运行链路；已用 `assemble → load_machine_words → decode → execute` 闭环。接到开源/明确 GPU 设备指令集是**加分项**，非满分刚需。
 
 ### 关于华为云机时
 

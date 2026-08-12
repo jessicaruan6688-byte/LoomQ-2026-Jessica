@@ -106,8 +106,8 @@ shots：[待填写]
 
 ```text
 指令编码规格：starter_kit/docs/LOOMQ_QISA_V1.md
-模拟器扩展实现：starter_kit/riscv_emulator.py（qinit/qh/qx/qcx/qmeas + assemble_quantum_word/decode_quantum_word；CUSTOM-0 opcode=0b0001011）
-端到端测试命令：PYTHONPATH=starter_kit python starter_kit/tests/test_quantum_riscv_e2e.py
+模拟器扩展实现：starter_kit/riscv_emulator.py（qinit/qh/qx/qcx/qmeas；assemble/decode；**load_machine_words 机器码闭环**，对齐主办方 Q3 方向 1；CUSTOM-0 opcode=0b0001011）
+端到端测试命令：PYTHONPATH=starter_kit python starter_kit/tests/test_quantum_riscv_e2e.py（含 test_bell_via_machine_words_closed_loop）
 ```
 
 ## 新手引导与视觉叙事 Bonus

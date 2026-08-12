@@ -10,9 +10,18 @@
 
 ---
 
-## 1. 文本助记符（主执行路径）
+## 1. 文本助记符与机器码闭环（评分口径）
 
-端到端测评以**汇编文本**为主；模拟器 `load_program` 直接识别下列助记符。
+依据主办方 Q&A **Q3**：Bonus 期望第 **1** 种方向——自定义编码须进入**可运行、可验证**的执行链路，不能只存在于文档。不要求完整汇编器/链接器；在官方 `riscv_emulator.py` 上做最小闭环即可。
+
+本实现的闭环：
+
+```text
+(mnemonic, fields) → assemble_quantum_word → 32-bit CUSTOM-0 word
+       → load_machine_words → decode_quantum_word → (op, args) → execute
+```
+
+文本 `load_program` 仍保留：用于 L3 经典控制流与可读汇编；**Bonus 验真以 `load_machine_words` 路径为准**（见 `test_bell_via_machine_words_closed_loop`）。
 
 | 助记符 | 操作数 | 语义 |
 |--------|--------|------|
@@ -71,6 +80,9 @@
 ```python
 assemble_quantum_word(mnemonic, *, qs1=0, qs2=0, rd=0, funct7=0) -> int
 decode_quantum_word(word: int) -> dict  # mnemonic/opcode/funct3/qs1/qs2/rd/...
+decoded_to_op_args(decoded) -> (op, args)
+assemble_quantum_program_words([(mnemonic, fields), ...]) -> list[int]
+TinyRISCVEmulator.load_machine_words(words)  # decode+load for execute()
 ```
 
 示例（CNOT 0→1）：

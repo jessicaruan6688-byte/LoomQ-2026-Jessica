@@ -17,8 +17,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from riscv_emulator import (  # noqa: E402
     CUSTOM0_OPCODE,
     TinyRISCVEmulator,
+    assemble_quantum_program_words,
     assemble_quantum_word,
     decode_quantum_word,
+    decoded_to_op_args,
 )
 
 BELL_ASM = """
@@ -132,12 +134,54 @@ def test_classical_l3_style_still_runs() -> None:
     assert state.get("x3") == 16
 
 
+def test_bell_via_machine_words_closed_loop() -> None:
+    """Organizer Q3 direction 1: CUSTOM-0 words must enter the live pipeline.
+
+    Pipeline: assemble fields → 32-bit words → load_machine_words (decode) → execute.
+    Text ``load_program`` remains for L3 classical / human-readable asm.
+    """
+    steps = [
+        ("qinit", {"qs1": 2}),
+        ("qh", {"qs1": 0}),
+        ("qcx", {"qs1": 0, "qs2": 1}),
+        ("qmeas", {"qs1": 0, "rd": 10}),
+        ("qmeas", {"qs1": 1, "rd": 11}),
+    ]
+    words = assemble_quantum_program_words(steps)
+    assert len(words) == 5
+    assert all(isinstance(w, int) for w in words)
+    # Spot-check first word is CUSTOM-0
+    assert (words[0] & 0x7F) == CUSTOM0_OPCODE
+
+    # decode → (op, args) must match intent before execute
+    op0, args0 = decoded_to_op_args(decode_quantum_word(words[0]))
+    assert op0 == "qinit" and args0 == ["2"]
+    op_cx, args_cx = decoded_to_op_args(decode_quantum_word(words[2]))
+    assert op_cx == "qcx" and args_cx == ["0", "1"]
+    op_m, args_m = decoded_to_op_args(decode_quantum_word(words[3]))
+    assert op_m == "qmeas" and args_m == ["0", "x10"]
+
+    emu = TinyRISCVEmulator(rng_seed=42)
+    emu.load_machine_words(words)
+    assert emu.machine_words == words
+    state = emu.execute()
+    assert state.get("x10", 0) == state.get("x11", 0)
+
+    # Same seed + same words ⇒ identical classical outcomes
+    emu2 = TinyRISCVEmulator(rng_seed=42)
+    emu2.load_machine_words(words)
+    state2 = emu2.execute()
+    assert state2.get("x10") == state.get("x10")
+    assert state2.get("x11") == state.get("x11")
+
+
 def main() -> int:
     tests = [
         test_encode_decode_roundtrip,
         test_bell_correlated_seeded,
         test_bell_multi_shot_consistency,
         test_classical_l3_style_still_runs,
+        test_bell_via_machine_words_closed_loop,
     ]
     failures = 0
     for test in tests:

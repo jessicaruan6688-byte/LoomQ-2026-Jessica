@@ -7,7 +7,8 @@ LoomQ 量子接入平权计划 - 轻量级 RISC-V 寄存器与控制流模拟器
 
 LoomQ QISA v1（自定义量子扩展，CUSTOM-0）：
   文本助记符 ``qinit`` / ``qh`` / ``qx`` / ``qcx`` / ``qmeas``
-  以及 32-bit 编解码辅助 ``assemble_quantum_word`` / ``decode_quantum_word``。
+  以及 32-bit 编解码 ``assemble_quantum_word`` / ``decode_quantum_word`` /
+  ``load_machine_words``（机器码进入执行链路，对齐主办方 Q3）。
   规格见 ``starter_kit/docs/LOOMQ_QISA_V1.md``。
 """
 
@@ -101,6 +102,36 @@ def decode_quantum_word(word: int) -> Dict[str, Any]:
     }
 
 
+def decoded_to_op_args(decoded: Dict[str, Any]) -> Tuple[str, List[str]]:
+    """Lower a decoded CUSTOM-0 word to the emulator's ``(op, args)`` tuple.
+
+    This is the bridge that puts binary encoding on the live execution path
+    (organizer Q3 / direction 1): ``word → decode → (op, args) → execute``.
+    """
+    op = str(decoded["mnemonic"])
+    qs1 = int(decoded["qs1"])
+    qs2 = int(decoded["qs2"])
+    rd = int(decoded["rd"])
+    if op == "qinit":
+        return op, [str(qs1)]
+    if op in {"qh", "qx"}:
+        return op, [str(qs1)]
+    if op == "qcx":
+        return op, [str(qs1), str(qs2)]
+    if op == "qmeas":
+        return op, [str(qs1), f"x{rd}"]
+    raise ValueError(f"unsupported QISA mnemonic after decode: {op}")
+
+
+def assemble_quantum_program_words(
+    steps: List[Tuple[str, Dict[str, int]]],
+) -> List[int]:
+    """Assemble a list of ``(mnemonic, field_kwargs)`` into machine words."""
+    return [
+        assemble_quantum_word(mnemonic, **fields) for mnemonic, fields in steps
+    ]
+
+
 class _QuantumState:
     """Minimal statevector (pure Python complex list). Qubit k = bit k of index."""
 
@@ -171,6 +202,7 @@ class TinyRISCVEmulator:
         self.qstate: Optional[_QuantumState] = None
         self.rng_seed = 42 if rng_seed is None else rng_seed
         self.rng = random.Random(self.rng_seed)
+        self.machine_words: List[int] = []
 
     def reset_rng(self, seed: Optional[int] = None) -> None:
         if seed is not None:
@@ -250,6 +282,27 @@ class TinyRISCVEmulator:
             temp_instructions.append((op, args))
 
         self.instructions = temp_instructions
+        self.machine_words: List[int] = []
+
+    def load_machine_words(self, words: List[int]) -> None:
+        """Load a program from 32-bit CUSTOM-0 instruction words.
+
+        Each word is decoded and lowered to ``(op, args)`` before ``execute``.
+        Classical L3 text programs continue to use ``load_program``; this path
+        is the Bonus closed loop required by organizer Q3 (encoding participates
+        in a runnable pipeline, not documentation-only).
+        """
+        self.instructions = []
+        self.labels = {}
+        self.pc = 0
+        self.registers = [0] * 32
+        self.qstate = None
+        self.rng = random.Random(self.rng_seed)
+        self.machine_words = [int(w) & 0xFFFFFFFF for w in words]
+        for word in self.machine_words:
+            decoded = decode_quantum_word(word)
+            op, args = decoded_to_op_args(decoded)
+            self.instructions.append((op, args))
 
     def _require_qstate(self) -> _QuantumState:
         if self.qstate is None:
