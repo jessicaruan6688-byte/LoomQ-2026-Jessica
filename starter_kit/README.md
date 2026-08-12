@@ -15,6 +15,7 @@ PYTHONPATH=. python evaluator.py --level declared --target spinq,braket,originq
 
 # 3) L2 对话（需先复制 .env.example → .env 并填写 LOOMQ_LLM_*）
 PYTHONPATH=. python tools/l2_chat_cli.py
+# 或最小 Web 壳：PYTHONPATH=. python web/server.py → http://127.0.0.1:8765/
 
 # 4) 真机 Bell 证据（需对应云账号；空电路不算分）
 PYTHONPATH=. python tools/run_bell_evidence.py --platform originq

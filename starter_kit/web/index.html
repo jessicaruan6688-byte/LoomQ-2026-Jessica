@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LoomQ L2 Agent</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #0f1419;
+        --panel: #1a2332;
+        --text: #e8edf4;
+        --muted: #8b9bb4;
+        --accent: #3d8bfd;
+        --border: #2a3548;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.5;
+      }
+      main {
+        max-width: 52rem;
+        margin: 0 auto;
+        padding: 1.5rem 1rem 2rem;
+      }
+      h1 {
+        font-size: 1.25rem;
+        margin: 0 0 0.25rem;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+      }
+      label {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+      }
+      textarea {
+        width: 100%;
+        min-height: 7rem;
+        padding: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+        font: inherit;
+        resize: vertical;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0.75rem 0 1rem;
+      }
+      button {
+        border: 0;
+        border-radius: 8px;
+        padding: 0.55rem 1rem;
+        font: inherit;
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+      }
+      button.secondary {
+        background: var(--panel);
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem;
+        min-height: 8rem;
+        margin: 0;
+      }
+      .status {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-top: 0.5rem;
+      }
+      .status.error {
+        color: #f87171;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>LoomQ L2 Agent</h1>
+      <p class="sub">自然语言 → OpenQASM / 后端推荐（本地 Web 薄壳，对接 adapter.agent_chat）</p>
+
+      <label for="prompt">你的问题</label>
+      <textarea id="prompt" placeholder="例如：生成一个 3 比特 GHZ 态并全测量"></textarea>
+
+      <div class="row">
+        <button type="button" id="send">发送</button>
+        <button type="button" class="secondary" data-prompt="生成一个 3 比特 GHZ 态并全测量">
+          示例：GHZ
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          data-prompt="请修好这段贝尔电路：OPENQASM 2.0; H q[0]; CX q[0],q[1];"
+        >
+          示例：修 Bell
+        </button>
+        <button
+          type="button"
+          class="secondary"
+          data-prompt="我有 15 个比特、希望零排队，应选哪个后端？"
+        >
+          示例：15q 后端
+        </button>
+      </div>
+
+      <label for="output">Agent 回复</label>
+      <pre id="output">等待输入…</pre>
+      <p class="status" id="status"></p>
+    </main>
+    <script>
+      const promptEl = document.getElementById("prompt");
+      const outputEl = document.getElementById("output");
+      const statusEl = document.getElementById("status");
+      const sendBtn = document.getElementById("send");
+
+      function setStatus(text, isError) {
+        statusEl.textContent = text;
+        statusEl.classList.toggle("error", Boolean(isError));
+      }
+
+      async function sendPrompt() {
+        const prompt = promptEl.value.trim();
+        if (!prompt) {
+          setStatus("请先输入问题", true);
+          return;
+        }
+        sendBtn.disabled = true;
+        setStatus("请求中…");
+        outputEl.textContent = "";
+        try {
+          const res = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.error || res.statusText);
+          }
+          outputEl.textContent = data.response || "";
+          setStatus("完成");
+        } catch (err) {
+          outputEl.textContent = "";
+          setStatus(String(err.message || err), true);
+        } finally {
+          sendBtn.disabled = false;
+        }
+      }
+
+      sendBtn.addEventListener("click", sendPrompt);
+      promptEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          sendPrompt();
+        }
+      });
+
+      document.querySelectorAll("[data-prompt]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          promptEl.value = btn.getAttribute("data-prompt") || "";
+          promptEl.focus();
+        });
+      });
+
+      fetch("/api/health")
+        .then((r) => r.json())
+        .then((d) => {
+          if (!d.l2_configured) {
+            setStatus("LOOMQ_LLM_* 未配置 — 复制 .env.example 并填写后再聊", true);
+          }
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>

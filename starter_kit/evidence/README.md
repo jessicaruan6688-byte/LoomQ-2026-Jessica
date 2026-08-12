@@ -75,9 +75,11 @@ shots：[待填写]
 
 ```text
 启动界面或 CLI 的命令：
+  cd starter_kit && PYTHONPATH=. python web/server.py
+  # 浏览器打开 http://127.0.0.1:8765/（示例按钮对应下方 3 个任务）
   cd starter_kit && python tools/l2_chat_cli.py
   # 或一次性：PYTHONPATH=starter_kit python starter_kit/tools/l2_chat_cli.py '生成一个 3 比特 GHZ 态并全测量'
-测试入口或页面地址：无（CLI）
+测试入口或页面地址：http://127.0.0.1:8765/（本地 Web，需 LOOMQ_LLM_*）
 适合现场体验的 3 个用户任务：
 1. 生成 3 比特 GHZ 并全测量，确认回复含 OpenQASM 2.0
 2. 粘贴一段错误的贝尔代码（大写门名/缺寄存器）请 Agent 修好
