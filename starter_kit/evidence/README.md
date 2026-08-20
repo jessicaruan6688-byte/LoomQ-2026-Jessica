@@ -13,25 +13,28 @@
 ```
 
 1. 第一屏：量旋真机 Bell `G-260809-0018`，柱状图主峰 **00/11**（归档回放，不排队）。  
-2. 点「再看三枚硬币」或 `?exp=ghz3`：GHZ `S-260810-0001`，主峰 **000/111**。  
+2. 点「再看三枚硬币」或 `?demo=ghz3` / `?exp=ghz3`：GHZ `S-260810-0001`，主峰 **000/111**。  
 3. L2 三项：`?demo=repair` 语法说明 · `?demo=backend` 15 比特零排队能力表 · 任务 1 GHZ 需 `LOOMQ_LLM_*` 调 Agent。  
 
 **目标用户**：已有 OpenQASM/多 SDK 经验的产品与开发——一份中间层 + 可溯源真机 job，而不是再学三家方言。
 
-## 公开态势对照（2026-08-20，仅 Issue 回执 + evidence 头）
+## 公开态势对照（2026-08-20 傍晚，仅 Issue 回执 + evidence 头）
 
 | 队 | 最后 Issue | L1–L3 | 真机叙事 | L2/产品公开面 |
 |---|---|---|---|---|
 | WilderNoTrack | #31 | 全勾 | **量旋+本源**，各 2 job | `python3 -m loomq web` :8787 |
 | AphrixZjr | #32 | 全勾 | Origin+SpinQ 脚本化 | Docker compose + web 单测 |
 | tale03 | #39 | 全勾 | 量旋+本源材料 | Flask `app.py` :5000 |
+| AzureWynn | #45 | 全勾 | 量旋 2q+3q（G/S-260817） | CLI 为主，无 Web |
+| **本队** | **#44** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
+| hongwei-2026 | #50 | 全勾 | 量旋 1 job（G-260820-0003） | `loomq_web.py` :8765 |
 | HpIahtcthocw | #27 | 全勾 | 量旋 2q+3q（同构） | 文档为主 |
-| **本队** | **#42→待更新** | **全勾** | **量旋 2q+3q**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
+| WayneYu1212 | #52 | 全勾 | evidence 空 | 待现场 |
 | yiyuanrvk77 | #36 | 全勾 | 量旋 1 台 | `web_demo.py` 柱状图 |
 | Jimmy658 | #38 | 全勾 | Issue 真机空 | L2 Agent |
 | lyl2222 | #37 | 无 L3 | 量旋 1 job | `web_app.py` |
 
-> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。
+> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**本队 #44 SHA `fdd484d` 为当前生效提交。**
 
 ## 本包相对前 Issue (#42) 新增（须进 commit）
 
@@ -97,7 +100,7 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 判定：有效（H + 两级 CNOT；实验主峰在 000/111，有 NISQ 泄漏）
 ```
 
-### 待补：本源悟空（120s 机时已开放；2026-08-19/20 云接口返回维护，未产生可溯源 job）
+### 待补：本源悟空（120s 机时已开放；2026-08-19/20 云接口仍返回维护，未产生可溯源 job）
 
 ```text
 平台名称：本源悟空（超导）
@@ -105,11 +108,11 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 运行时间：[维护结束后填写]
 shots：256（计划）
 实际执行的 QASM：evidence/files/originq-bell.qasm（与量旋 Bell 同语义）
-平台返回的原始结果：evidence/files/originq-bell-result.json
+平台返回的原始结果：evidence/files/originq-bell-result.json（维护失败记录，非有效真机分）
 任务页截图：[维护成功后选填]
 ```
 
-2026-08-19：`async_real_chip_measure` 返回 `Quantum computer under maintenance`；未消耗有效结果。
+2026-08-19 与 2026-08-20 17:30 (UTC+8)：`async_real_chip_measure` 均返回 `Quantum computer under maintenance`；见 `originq-bell-result.json`。
 量旋双平台已满足人工真机 10 分上限；本源用于「两家中国云」答辩叙事，非第 11 分。
 
 ## L2 交互体验

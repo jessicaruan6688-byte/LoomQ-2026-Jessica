@@ -78,6 +78,33 @@ h1 {
   white-space: nowrap;
 }
 
+.demo-banner {
+  margin: 0;
+  padding: 0.55rem 1.25rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+body.demo-repair .repair {
+  border-color: var(--exp);
+  box-shadow: inset 0 0 0 1px rgba(180, 83, 9, 0.25);
+}
+
+body.demo-backend .board {
+  margin-top: 0.35rem;
+}
+
+body.demo-backend .bcard.fit {
+  background: #edf5e6;
+}
+
+body.demo-ghz .hero-copy .primary {
+  background: var(--ink);
+}
+
 .badge.warn {
   border-color: #d6d3d1;
   color: #9a3412;

@@ -1,0 +1,16 @@
+{
+  "status": "maintenance",
+  "note": "2026-08-20 17:30 (UTC+8) 再次调用 LOOMQ_ORIGINQ_MODE=wukong + async_real_chip_measure；云返回 Quantum computer under maintenance. Please try again later. 未产生可溯源 job_id，不申报真机分。",
+  "attempts": [
+    {
+      "at": "2026-08-19T17:06:00+08:00",
+      "error": "Quantum computer under maintenance"
+    },
+    {
+      "at": "2026-08-20T17:30:00+08:00",
+      "error": "Quantum computer under maintenance"
+    }
+  ],
+  "planned_shots": 256,
+  "qasm": "evidence/files/originq-bell.qasm"
+}

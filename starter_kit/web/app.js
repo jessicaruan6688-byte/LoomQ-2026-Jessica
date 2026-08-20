@@ -16,6 +16,7 @@ const legendSim = document.getElementById("legend-sim");
 const gatesEl = document.getElementById("gates");
 const repairEl = document.getElementById("repair");
 const boardEl = document.getElementById("backend-board");
+const demoBannerEl = document.getElementById("demo-banner");
 
 let experiments = [];
 let backends = [];
@@ -185,6 +186,20 @@ function showRepair(show) {
   repairEl.hidden = !show;
 }
 
+function setDemoMode(mode, bannerText) {
+  document.body.classList.remove("demo-repair", "demo-backend", "demo-ghz");
+  if (mode) {
+    document.body.classList.add("demo-" + mode);
+  }
+  if (bannerText) {
+    demoBannerEl.hidden = false;
+    demoBannerEl.textContent = bannerText;
+  } else {
+    demoBannerEl.hidden = true;
+    demoBannerEl.textContent = "";
+  }
+}
+
 async function sendPrompt() {
   const prompt = promptEl.value.trim();
   if (!prompt) {
@@ -300,8 +315,12 @@ Promise.all([
       renderExperiment(initial);
     }
     renderBackendBoard(null, false);
-    const demo = new URLSearchParams(window.location.search).get("demo");
-    if (demo === "repair") {
+    const demoMode = new URLSearchParams(window.location.search).get("demo");
+    if (demoMode === "repair") {
+      setDemoMode(
+        "repair",
+        "L2 任务 2 · 修 Bell 语法坑 + 对照 G-260809-0018 真机归档",
+      );
       showRepair(true);
       promptEl.value =
         "我想制备一个贝尔态，但这段代码报错了，帮我修好：H q[0]; CX q[0] q[1]";
@@ -310,25 +329,36 @@ Promise.all([
         renderExperiment(bell);
       }
       setStatus("任务 2：语法坑说明 + 真机 Bell 归档对照。");
-    } else if (demo === "backend") {
+    } else if (demoMode === "backend") {
+      setDemoMode(
+        "backend",
+        "L2 任务 3 · ≥15 比特且 queue=none 的后端已高亮（本地模拟器）",
+      );
       renderBackendBoard(null, true);
       promptEl.value = "我需要运行一个 15 比特电路，且零排队等待，选哪个平台？";
       setStatus("任务 3：≥15 比特且 queue=none 的本地模拟器已高亮。");
-    } else if (demo === "ghz") {
+    } else if (demoMode === "ghz" || demoMode === "ghz3") {
+      setDemoMode(
+        "ghz",
+        "L2 任务 1 · 三比特 GHZ 真机归档 S-260810-0001（000/111 主峰）",
+      );
       const ghz = experiments.find((item) => item.id === "ghz3");
       if (ghz) {
         renderExperiment(ghz);
+        promptEl.value = "生成一个 3 比特 GHZ 态并全测量";
       }
       setStatus("任务 1：三比特 GHZ 真机归档 000/111。");
+    } else {
+      setDemoMode(null, null);
     }
     if (!l2Configured) {
       llmBadge.textContent = "真机已就绪 · Agent 待填 .env";
-      if (!demo) {
+      if (!demoMode) {
         setStatus("先点第一次实验。三项任务无钥匙也能看懂；填 .env 后同一按钮会真的调用模型。");
       }
     } else {
       llmBadge.textContent = "真机已就绪 · Agent 可对话";
-      if (!demo) {
+      if (!demoMode) {
         setStatus("先看真机主峰，再用下面三个按钮走评委三项任务。");
       }
     }
