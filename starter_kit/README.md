@@ -4,21 +4,21 @@
 
 本仓库在官方骨架之上实现了：**统一 OpenQASM 中间层（L1）**、**自然语言 Agent（L2，可选）**、**Hybrid→RISC-V（L3）**。架构说明见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)；终局检查见 [`docs/FINAL_CHECKLIST.md`](docs/FINAL_CHECKLIST.md)。
 
-## 一分钟上手
+## 一分钟上手（评委请从这里开始）
 
 ```bash
-# 1) Python 3.10 虚拟环境并安装锁定依赖
+./start_demo.sh
+```
+
+浏览器打开 [http://127.0.0.1:8765/](http://127.0.0.1:8765/)。第一屏为量旋真机归档 **Bell `G-260809-0018` / GHZ `S-260810-0001`**，不排队、不耗云额度。
+
+现场：`?demo=repair` · `?demo=backend` · 任务 1 GHZ（需 `.env` 中 `LOOMQ_LLM_*`）。对照表见 [`evidence/README.md`](evidence/README.md)。
+
+```bash
+# 可选：契约自测与 CLI（评测根目录为本目录）
 pip install -r requirements.txt
-
-# 2) L1+L3 公开契约自测（按 submission.yaml 声明）
 PYTHONPATH=. python evaluator.py --level declared --target spinq,braket,originq
-
-# 3) L2 对话（需先复制 .env.example → .env 并填写 LOOMQ_LLM_*）
 PYTHONPATH=. python tools/l2_chat_cli.py
-# 或最小 Web 壳：PYTHONPATH=. python web/server.py → http://127.0.0.1:8765/
-
-# 4) 真机 Bell 证据（需对应云账号；空电路不算分）
-PYTHONPATH=. python tools/run_bell_evidence.py --platform originq
 ```
 
 干净容器（与官方一致，评测根目录为本目录）：

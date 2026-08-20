@@ -379,7 +379,10 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
     if hasattr(machine, "set_configure"):
         machine.set_configure(72, 72)
     machine.init_qvm(token, False)
-    chip = getattr(pq.real_chip_type, "origin_72", 2)
+    chip_name = (os.environ.get("LOOMQ_ORIGINQ_CHIP") or "origin_72").strip()
+    chip = getattr(pq.real_chip_type, chip_name, None)
+    if chip is None:
+        chip = chip_name
     job_id = None
     try:
         # Prefer OriginIR when the cloud accepts strings; fall back to QProg.
@@ -416,6 +419,7 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
             import time
 
             deadline = time.time() + int(os.environ.get("LOOMQ_ORIGINQ_TIMEOUT_SEC", "1800"))
+            poll = max(1.0, float(os.environ.get("LOOMQ_ORIGINQ_POLL_SEC", "2")))
             while time.time() < deadline:
                 state_payload = status_fn(str(job_id), True)
                 if isinstance(state_payload, tuple) and len(state_payload) >= 2:
@@ -427,7 +431,7 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
                 elif isinstance(state_payload, dict):
                     raw = state_payload
                     break
-                time.sleep(5)
+                time.sleep(poll)
             if raw is None:
                 raise TimeoutError(f"OriginQ Wukong task {job_id} timed out")
     finally:

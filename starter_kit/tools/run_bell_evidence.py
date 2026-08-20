@@ -47,7 +47,7 @@ def _load_dotenv() -> None:
         key, _, value = line.partition("=")
         key = key.strip()
         value = value.strip().strip('"').strip("'")
-        if key and key not in os.environ:
+        if key and not os.environ.get(key):
             os.environ[key] = value
 
 
@@ -102,10 +102,11 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     qasm_path = out_dir / f"{args.platform}-bell.qasm"
     result_path = out_dir / f"{args.platform}-bell-result-{stamp}.json"
+    canonical = out_dir / f"{args.platform}-bell-result.json"
     qasm_path.write_text(BELL, encoding="utf-8")
-    result_path.write_text(
-        json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    payload = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+    result_path.write_text(payload, encoding="utf-8")
+    canonical.write_text(payload, encoding="utf-8")
 
     print("wrote", qasm_path)
     print("wrote", result_path)

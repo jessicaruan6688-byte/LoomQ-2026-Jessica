@@ -3,198 +3,114 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LoomQ L2 Agent</title>
-    <style>
-      :root {
-        color-scheme: light dark;
-        --bg: #0f1419;
-        --panel: #1a2332;
-        --text: #e8edf4;
-        --muted: #8b9bb4;
-        --accent: #3d8bfd;
-        --border: #2a3548;
-      }
-      * {
-        box-sizing: border-box;
-      }
-      body {
-        margin: 0;
-        font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        line-height: 1.5;
-      }
-      main {
-        max-width: 52rem;
-        margin: 0 auto;
-        padding: 1.5rem 1rem 2rem;
-      }
-      h1 {
-        font-size: 1.25rem;
-        margin: 0 0 0.25rem;
-      }
-      .sub {
-        color: var(--muted);
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-      }
-      label {
-        display: block;
-        font-size: 0.85rem;
-        color: var(--muted);
-        margin-bottom: 0.35rem;
-      }
-      textarea {
-        width: 100%;
-        min-height: 7rem;
-        padding: 0.75rem;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--panel);
-        color: var(--text);
-        font: inherit;
-        resize: vertical;
-      }
-      .row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin: 0.75rem 0 1rem;
-      }
-      button {
-        border: 0;
-        border-radius: 8px;
-        padding: 0.55rem 1rem;
-        font: inherit;
-        cursor: pointer;
-        background: var(--accent);
-        color: #fff;
-      }
-      button.secondary {
-        background: var(--panel);
-        color: var(--text);
-        border: 1px solid var(--border);
-      }
-      button:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-      }
-      pre {
-        white-space: pre-wrap;
-        word-break: break-word;
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 0.75rem;
-        min-height: 8rem;
-        margin: 0;
-      }
-      .status {
-        font-size: 0.85rem;
-        color: var(--muted);
-        margin-top: 0.5rem;
-      }
-      .status.error {
-        color: #f87171;
-      }
-    </style>
+    <title>LoomQ · 真机回放与 Agent</title>
+    <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <main>
-      <h1>LoomQ L2 Agent</h1>
-      <p class="sub">自然语言 → OpenQASM / 后端推荐（本地 Web 薄壳，对接 adapter.agent_chat）</p>
+    <header class="top">
+      <div>
+        <p class="kicker">LoomQ · 量子接入平权</p>
+        <h1>真机归档回放 · Agent 入口</h1>
+        <p class="lede">
+          第一屏是赛期量旋真机任务 <code>G-260809-0018</code> / <code>S-260810-0001</code> 的归档柱状图与任务页截图。
+          演示不排队上云；下方 Agent 走 <code>agent_chat</code>，电路经本地精确验算后可对照真机主峰。
+        </p>
+      </div>
+      <p id="llm-badge" class="badge">正在检查 Agent…</p>
+    </header>
 
-      <label for="prompt">你的问题</label>
-      <textarea id="prompt" placeholder="例如：生成一个 3 比特 GHZ 态并全测量"></textarea>
+    <section class="hero" aria-labelledby="chart-title">
+      <div class="hero-copy">
+        <h2 id="chart-title">两枚永远同面的硬币</h2>
+        <p id="chart-plain" class="plain">
+          两枚硬币各自仍是随机的，但几乎从不一面一背。这就是纠缠。
+        </p>
+        <p id="chart-noise" class="noise"></p>
+        <ul id="chart-meta" class="meta"></ul>
+        <div class="row">
+          <button type="button" class="primary" data-experiment="bell"
+            data-prompt="我不会量子。让两枚硬币永远同一面。给我看真机上的结果，用一句话说清我看到了什么。">
+            第一次实验 · 两枚硬币
+          </button>
+          <button type="button" class="ghost" data-experiment="ghz3"
+            data-prompt="生成一个 3 比特的最大纠缠态（GHZ），并全测量。用真机结果说明我看见了什么。">
+            再看三枚硬币
+          </button>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="legend">
+          <span><i class="swatch exp"></i><span id="legend-exp">真机归档</span></span>
+          <span><i class="swatch sim"></i><span id="legend-sim">理想（无噪声）</span></span>
+        </div>
+        <div id="bars" class="bars"></div>
+        <div id="gates" class="gates" aria-label="电路门"></div>
+        <img id="shot" hidden alt="" />
+      </div>
+    </section>
 
-      <div class="row">
-        <button type="button" id="send">发送</button>
-        <button type="button" class="secondary" data-prompt="生成一个 3 比特 GHZ 态并全测量">
-          示例：GHZ
+    <section class="agent" aria-labelledby="agent-title">
+      <h2 id="agent-title">L2 评委三项任务</h2>
+      <p class="sub">
+        无模型钥匙时可看真机回放与语法说明；配置 <code>LOOMQ_LLM_*</code> 后同一按钮调用
+        <code>agent_chat</code>，并用本地验算柱状图对照归档真机。
+      </p>
+      <div class="row wrap">
+        <button type="button" class="ghost" data-prompt="生成一个 3 比特 GHZ 态并全测量">
+          任务 1 · 生成 GHZ
         </button>
         <button
           type="button"
-          class="secondary"
-          data-prompt="请修好这段贝尔电路：OPENQASM 2.0; H q[0]; CX q[0],q[1];"
+          class="ghost"
+          data-prompt="我想制备一个贝尔态，但这段代码报错了，帮我修好：H q[0]; CX q[0] q[1]"
         >
-          示例：修 Bell
+          任务 2 · 修好这段 Bell
         </button>
         <button
           type="button"
-          class="secondary"
-          data-prompt="我有 15 个比特、希望零排队，应选哪个后端？"
+          class="ghost"
+          data-prompt="我需要运行一个 15 比特电路，且零排队等待，选哪个平台？"
         >
-          示例：15q 后端
+          任务 3 · 15 比特选后端
         </button>
       </div>
-
-      <label for="output">Agent 回复</label>
-      <pre id="output">等待输入…</pre>
+      <aside id="repair" class="repair" hidden>
+        <p>这段新手代码有三处坑，不是量子物理问题：</p>
+        <ul>
+          <li>门名写成了大写 <code>H</code> / <code>CX</code>，OpenQASM 2.0 要小写 <code>h</code> / <code>cx</code></li>
+          <li>没有声明 <code>qreg</code> / <code>creg</code>，比特还不存在</li>
+          <li><code>CX q[0] q[1]</code> 少了逗号，应写成 <code>cx q[0], q[1];</code></li>
+        </ul>
+      </aside>
+      <div id="backend-board" class="board" aria-label="后端能力表"></div>
+      <label for="prompt">你的问题</label>
+      <textarea
+        id="prompt"
+        placeholder="例如：我不会量子。让两枚硬币永远同一面。"
+      ></textarea>
+      <div class="row">
+        <button type="button" class="primary" id="send">让 Agent 说话</button>
+      </div>
       <p class="status" id="status"></p>
-    </main>
-    <script>
-      const promptEl = document.getElementById("prompt");
-      const outputEl = document.getElementById("output");
-      const statusEl = document.getElementById("status");
-      const sendBtn = document.getElementById("send");
+      <p id="backend" class="backend" hidden></p>
+      <div class="split">
+        <div>
+          <h3>电路（人能看的那几行）</h3>
+          <pre id="qasm">打开页面时已载入真机 Bell 电路。</pre>
+        </div>
+        <div>
+          <h3>Agent 原文</h3>
+          <pre id="output">点任务按钮，或自己打一句话。真机结果不必等这里。</pre>
+        </div>
+      </div>
+    </section>
 
-      function setStatus(text, isError) {
-        statusEl.textContent = text;
-        statusEl.classList.toggle("error", Boolean(isError));
-      }
-
-      async function sendPrompt() {
-        const prompt = promptEl.value.trim();
-        if (!prompt) {
-          setStatus("请先输入问题", true);
-          return;
-        }
-        sendBtn.disabled = true;
-        setStatus("请求中…");
-        outputEl.textContent = "";
-        try {
-          const res = await fetch("/api/chat", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt }),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.error || res.statusText);
-          }
-          outputEl.textContent = data.response || "";
-          setStatus("完成");
-        } catch (err) {
-          outputEl.textContent = "";
-          setStatus(String(err.message || err), true);
-        } finally {
-          sendBtn.disabled = false;
-        }
-      }
-
-      sendBtn.addEventListener("click", sendPrompt);
-      promptEl.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault();
-          sendPrompt();
-        }
-      });
-
-      document.querySelectorAll("[data-prompt]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          promptEl.value = btn.getAttribute("data-prompt") || "";
-          promptEl.focus();
-        });
-      });
-
-      fetch("/api/health")
-        .then((r) => r.json())
-        .then((d) => {
-          if (!d.l2_configured) {
-            setStatus("LOOMQ_LLM_* 未配置 — 复制 .env.example 并填写后再聊", true);
-          }
-        })
-        .catch(() => {});
-    </script>
+    <footer>
+      启动：仓库根目录 <code>./start_demo.sh</code>
+      · 本页不上传密钥 · 真机 job
+      <code>G-260809-0018</code> /
+      <code>S-260810-0001</code>
+    </footer>
+    <script src="/app.js"></script>
   </body>
 </html>
