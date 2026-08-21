@@ -26,7 +26,7 @@
 | AphrixZjr | #32 | 全勾 | Origin+SpinQ 脚本化 | Docker compose + web 单测 |
 | tale03 | #39 | 全勾 | 量旋+本源材料 | Flask `app.py` :5000 |
 | AzureWynn | #45 | 全勾 | 量旋 2q+3q（G/S-260817） | CLI 为主，无 Web |
-| **本队** | **#44** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
+| **本队** | **#56** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
 | hongwei-2026 | #50 | 全勾 | 量旋 1 job（G-260820-0003） | `loomq_web.py` :8765 |
 | HpIahtcthocw | #27 | 全勾 | 量旋 2q+3q（同构） | 文档为主 |
 | WayneYu1212 | #52 | 全勾 | evidence 空 | 待现场 |
@@ -34,7 +34,7 @@
 | Jimmy658 | #38 | 全勾 | Issue 真机空 | L2 Agent |
 | lyl2222 | #37 | 无 L3 | 量旋 1 job | `web_app.py` |
 
-> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**本队 #44 SHA `fdd484d` 为当前生效提交。**
+> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**对照表已对齐 #56（`ecb00be`）；本 commit 修正过期文案，以截止前最后一次 `submission:accepted` Issue 为准。**
 
 ## 本包相对前 Issue (#42) 新增（须进 commit）
 
