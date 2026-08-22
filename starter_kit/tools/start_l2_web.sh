@@ -30,7 +30,7 @@ PY
 }
 
 if already; then
-  echo "8765 上已经有 LoomQ 演示在跑：${URL}"
+  echo "${PORT} 上已经有 LoomQ 演示在跑：${URL}"
   echo "直接打开即可。若要加载刚改过的页面：先在占用该端口的终端按 Ctrl+C，再重新 ./start_demo.sh"
   if [ "${LOOMQ_NO_BROWSER:-}" != "1" ]; then
     if command -v open >/dev/null 2>&1; then

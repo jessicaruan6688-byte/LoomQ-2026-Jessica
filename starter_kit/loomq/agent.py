@@ -3,12 +3,15 @@
 Uses the official LOOMQ_LLM_* OpenAI-compatible contract via ``llm_client``.
 Does not hardcode answers for specific prompt strings; hidden variants must be
 handled by the model. Local verification only rejects unparseable / impossible
-artifacts and feeds errors back for another attempt (max 3 calls).
+artifacts and feeds errors back for another attempt
+(``LOOMQ_LLM_MAX_CALLS``, default 3). After the budget is exhausted, returns an
+explicit failure message instead of unverified QASM / backend text.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
@@ -17,8 +20,21 @@ from .circuit import MeasureOp
 from .parse_qasm import parse_qasm
 from .reference_sim import ideal_distribution
 
-MAX_CALLS = 3
 WHITELIST_GATES = "h, x, s, sdg, t, tdg, rz(θ), ry(θ), cx, cu1(θ), swap, ccx"
+
+
+def _max_calls() -> int:
+    """Respect official LOOMQ_LLM_MAX_CALLS injection (default 3)."""
+    raw = (os.environ.get("LOOMQ_LLM_MAX_CALLS") or "3").strip()
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 3
+
+
+# Back-compat for importers/tests that still read the module attribute.
+MAX_CALLS = _max_calls()
+
 
 _SYSTEM = f"""You are LoomQ's quantum accessibility agent.
 Follow the user request carefully. Prompts may be paraphrased; obey the stated intent.
@@ -85,19 +101,28 @@ def _capabilities_prompt_block() -> str:
 
 
 def extract_qasm(text: str) -> Optional[str]:
+    """Pull an OpenQASM 2.0 program only if it parses under the L1 whitelist."""
     if not isinstance(text, str) or not text.strip():
         return None
+    candidate: Optional[str] = None
     fenced = _QASM_FENCE_RE.search(text)
     if fenced:
         body = fenced.group(1).strip()
         if re.search(r"OPENQASM\s+2\.0", body, re.IGNORECASE):
-            return body
-        if "qreg" in body:
-            return 'OPENQASM 2.0;\ninclude "qelib1.inc";\n' + body
-    match = _QASM_BODY_RE.search(text)
-    if match:
-        return match.group(1).strip()
-    return None
+            candidate = body
+        elif "qreg" in body:
+            candidate = 'OPENQASM 2.0;\ninclude "qelib1.inc";\n' + body
+    if candidate is None:
+        match = _QASM_BODY_RE.search(text)
+        if match:
+            candidate = match.group(1).strip()
+    if candidate is None:
+        return None
+    try:
+        parse_qasm(candidate)
+    except Exception:
+        return None
+    return candidate
 
 
 def extract_backend_id(text: str) -> Optional[str]:
@@ -242,9 +267,10 @@ def agent_chat(prompt: str) -> str:
         {"role": "user", "content": user_prompt},
     ]
 
+    budget = _max_calls()
     last_text = ""
     calls = 0
-    while calls < MAX_CALLS:
+    while calls < budget:
         last_text = _chat(messages)
         calls += 1
 
@@ -257,8 +283,13 @@ def agent_chat(prompt: str) -> str:
             ok, reason = _backend_ok(backend_id, user_prompt)
             if ok:
                 return last_text
-            if calls >= MAX_CALLS:
-                return last_text
+            if calls >= budget:
+                allowed = ", ".join(sorted(_valid_backend_ids()))
+                return (
+                    f"[LoomQ Agent] 已达到 {budget} 次调用上限，"
+                    f"无法获得有效后端 ID（最后一次原因：{reason}）。"
+                    f"可用后端：{allowed}"
+                )
             allowed = ", ".join(sorted(_valid_backend_ids()))
             messages.append({"role": "assistant", "content": last_text})
             messages.append(
@@ -277,8 +308,11 @@ def agent_chat(prompt: str) -> str:
             ok, reason = _verify_qasm(qasm, user_prompt)
             if ok:
                 return last_text
-            if calls >= MAX_CALLS:
-                return last_text
+            if calls >= budget:
+                return (
+                    f"[LoomQ Agent] 已达到 {budget} 次调用上限，"
+                    f"无法生成合法的 OpenQASM 2.0 电路（最后一次原因：{reason}）。"
+                )
             messages.append({"role": "assistant", "content": last_text})
             messages.append(
                 {
@@ -293,7 +327,7 @@ def agent_chat(prompt: str) -> str:
             )
             continue
 
-        if backend_task and calls < MAX_CALLS:
+        if backend_task and calls < budget:
             messages.append({"role": "assistant", "content": last_text})
             messages.append(
                 {
@@ -306,7 +340,7 @@ def agent_chat(prompt: str) -> str:
             )
             continue
 
-        if qasm_task and calls < MAX_CALLS:
+        if qasm_task and calls < budget:
             messages.append({"role": "assistant", "content": last_text})
             messages.append(
                 {
@@ -319,6 +353,16 @@ def agent_chat(prompt: str) -> str:
             )
             continue
 
+        if qasm_task:
+            return (
+                f"[LoomQ Agent] 已达到 {budget} 次调用上限，"
+                "未找到合法的 OpenQASM 2.0 电路。"
+            )
+        if backend_task:
+            return (
+                f"[LoomQ Agent] 已达到 {budget} 次调用上限，"
+                "未能给出有效后端 ID。"
+            )
         return last_text
 
-    return last_text
+    return f"[LoomQ Agent] 已达到 {budget} 次调用上限，未能完成请求。"

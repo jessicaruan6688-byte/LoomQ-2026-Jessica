@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import os
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -106,6 +107,25 @@ class AgentLoopTests(unittest.TestCase):
         with mock.patch("llm_client.chat_completion", side_effect=fake_chat):
             reply = agent_chat("我需要运行一个 15 比特电路，且零排队等待，选哪个平台？")
         self.assertEqual(extract_backend_id(reply), "originq_local_simulator")
+
+    def test_exhausted_qasm_retries_return_error_not_illegal(self) -> None:
+        bad = "```qasm\nOPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[1];\nu3(0,0,0) q[0];\n```\n"
+
+        def fake_chat(messages, **extra):  # noqa: ANN001, ANN003
+            return {"choices": [{"message": {"content": bad}}]}
+
+        with mock.patch.dict(os.environ, {"LOOMQ_LLM_MAX_CALLS": "2"}, clear=False):
+            with mock.patch("llm_client.chat_completion", side_effect=fake_chat):
+                reply = agent_chat("生成一个 3 比特 GHZ 态并全测量")
+        self.assertIn("[LoomQ Agent]", reply)
+        self.assertIn("上限", reply)
+        # Must not pass through the illegal program as a successful answer.
+        self.assertNotIn("```", reply)
+        self.assertIsNone(extract_qasm(bad))
+
+    def test_extract_rejects_non_whitelist_gate(self) -> None:
+        bad = "```qasm\nOPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[1];\nu3(0,0,0) q[0];\n```\n"
+        self.assertIsNone(extract_qasm(bad))
 
 
 if __name__ == "__main__":

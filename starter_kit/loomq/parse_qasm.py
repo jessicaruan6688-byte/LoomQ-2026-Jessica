@@ -47,7 +47,9 @@ def _eval_param(expr: str) -> float:
     if not re.fullmatch(r"[0-9eE+\-*/().\s]+", normalized):
         raise ValueError(f"unsupported parameter expression: {expr}")
     try:
-        value = eval(normalized, {"__builtins__": {}}, {})  # noqa: S307 - intentional sandbox
+        # eval is intentional: builtins stripped + charset pre-filtered above,
+        # so this only evaluates arithmetic over floats/pi (no name lookup).
+        value = eval(normalized, {"__builtins__": {}}, {})  # noqa: S307
     except Exception as exc:  # noqa: BLE001
         raise ValueError(f"cannot evaluate parameter '{expr}': {exc}") from exc
     if not isinstance(value, (int, float)):

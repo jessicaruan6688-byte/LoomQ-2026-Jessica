@@ -114,6 +114,7 @@ shots：256（计划）
 
 2026-08-19 与 2026-08-20 17:30 (UTC+8)：`async_real_chip_measure` 均返回 `Quantum computer under maintenance`；见 `originq-bell-result.json`。
 量旋双平台已满足人工真机 10 分上限；本源用于「两家中国云」答辩叙事，非第 11 分。
+本源重试：`LOOMQ_ORIGINQ_MODE=wukong` + `LOOMQ_ORIGINQ_CHIP=WK_C180`（或云上当时可用后端，不必死磕 `origin_72`）。
 
 ## L2 交互体验
 

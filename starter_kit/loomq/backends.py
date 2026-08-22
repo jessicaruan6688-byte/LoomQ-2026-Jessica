@@ -384,6 +384,7 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
     if chip is None:
         chip = chip_name
     job_id = None
+    raw: Any = None
     try:
         # Prefer OriginIR when the cloud accepts strings; fall back to QProg.
         payload: Any = originir
@@ -396,17 +397,24 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
                 raw = machine.real_chip_measure(
                     payload, shots, chip_id=chip, task_name="LoomQ-L1"
                 )
-        except Exception:
-            prog = _qprog_from_qasm(pq, machine, qasm2)
-            if hasattr(machine, "async_real_chip_measure"):
-                job_id = machine.async_real_chip_measure(
-                    prog, shots, chip_id=chip, task_name="LoomQ-L1"
-                )
-            else:
-                raw = machine.real_chip_measure(
-                    prog, shots, chip_id=chip, task_name="LoomQ-L1"
-                )
-                job_id = None
+        except Exception as originir_exc:
+            try:
+                prog = _qprog_from_qasm(pq, machine, qasm2)
+                if hasattr(machine, "async_real_chip_measure"):
+                    job_id = machine.async_real_chip_measure(
+                        prog, shots, chip_id=chip, task_name="LoomQ-L1"
+                    )
+                else:
+                    raw = machine.real_chip_measure(
+                        prog, shots, chip_id=chip, task_name="LoomQ-L1"
+                    )
+                    job_id = None
+            except Exception as qprog_exc:
+                raise RuntimeError(
+                    "OriginQ Wukong submit failed for both OriginIR and QProg "
+                    f"payloads (chip={chip_name!r}): "
+                    f"originir={originir_exc!r}; qprog={qprog_exc!r}"
+                ) from qprog_exc
 
         if job_id is not None:
             # Poll until the cloud returns a terminal payload.
@@ -449,7 +457,7 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
             "transpiled_gates": len(circuit.gate_ops()),
             "qubits": circuit.n_qubits(),
             "target_ir": "originir",
-            "chip": "origin_72",
+            "chip": chip_name,
             "mode": "wukong",
         },
     )

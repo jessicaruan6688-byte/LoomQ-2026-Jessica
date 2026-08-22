@@ -12,11 +12,14 @@ import json
 import mimetypes
 import os
 import sys
+import threading
+import time
 import webbrowser
+from collections import deque
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Deque
 from urllib.parse import urlparse
 
 WEB_ROOT = Path(__file__).resolve().parent
@@ -30,6 +33,11 @@ from loomq.agent import extract_backend_id, extract_qasm  # noqa: E402
 from loomq.reference_sim import ideal_distribution  # noqa: E402
 
 DEFAULT_PORT = 8765
+# Demo-only chat throttle (protect LLM budget when judges click rapidly).
+CHAT_RATE_LIMIT = max(1, int(os.environ.get("LOOMQ_WEB_CHAT_RATE_LIMIT", "20")))
+CHAT_RATE_WINDOW_SEC = max(1.0, float(os.environ.get("LOOMQ_WEB_CHAT_RATE_WINDOW_SEC", "60")))
+_CHAT_HITS: Deque[float] = deque()
+_CHAT_LOCK = threading.Lock()
 STATIC_SUFFIXES = {".html", ".css", ".js", ".png", ".svg", ".ico", ".json"}
 EVIDENCE_ALLOWLIST = {
     "spinq-bell-hardware-result.png",
@@ -71,6 +79,18 @@ EXPERIMENT_FILES = {
 def l2_configured() -> bool:
     _load_dotenv()
     return all(os.environ.get(name) for name in REQUIRED_ENV)
+
+
+def chat_rate_ok() -> bool:
+    """Sliding-window limiter for /api/chat (thread-safe)."""
+    now = time.time()
+    with _CHAT_LOCK:
+        while _CHAT_HITS and _CHAT_HITS[0] <= now - CHAT_RATE_WINDOW_SEC:
+            _CHAT_HITS.popleft()
+        if len(_CHAT_HITS) >= CHAT_RATE_LIMIT:
+            return False
+        _CHAT_HITS.append(now)
+        return True
 
 
 def run_chat(prompt: str) -> str:
@@ -343,6 +363,18 @@ class L2WebHandler(BaseHTTPRequestHandler):
                     "missing": [
                         name for name in REQUIRED_ENV if not os.environ.get(name)
                     ],
+                },
+            )
+            return
+
+        if not chat_rate_ok():
+            self._send_json(
+                HTTPStatus.TOO_MANY_REQUESTS,
+                {
+                    "error": (
+                        f"请求太频繁：{CHAT_RATE_WINDOW_SEC:.0f} 秒内最多 "
+                        f"{CHAT_RATE_LIMIT} 次 Agent 调用。稍后再试。"
+                    )
                 },
             )
             return

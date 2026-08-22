@@ -70,22 +70,6 @@ class StateVector:
                 amps[i0] = a * x0 + b * x1
                 amps[i1] = c * x0 + d * x1
 
-    def apply_controlled_1q(self, matrix: Matrix2, control: int, target: int) -> None:
-        a, b, c, d = matrix
-        amps = self.amps
-        cmask = 1 << control
-        tmask = 1 << target
-        for i in range(len(amps)):
-            if not (i & cmask):
-                continue
-            if i & tmask:
-                continue
-            j = i | tmask
-            x0 = amps[i]
-            x1 = amps[j]
-            amps[i] = a * x0 + b * x1
-            amps[j] = c * x0 + d * x1
-
     def apply_cx(self, control: int, target: int) -> None:
         amps = self.amps
         cmask = 1 << control
