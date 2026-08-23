@@ -380,9 +380,23 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
         machine.set_configure(72, 72)
     machine.init_qvm(token, False)
     chip_name = (os.environ.get("LOOMQ_ORIGINQ_CHIP") or "origin_72").strip()
-    chip = getattr(pq.real_chip_type, chip_name, None)
+    # Official Q&A allows WK_C180; pyqpanda QCloud still expects real_chip_type / int.
+    aliases = {
+        "WK_C180": "origin_72",
+        "WK_C180_2": "origin_72",
+        "wukong": "origin_72",
+        "wukong_72": "origin_72",
+        "72": "origin_72",
+    }
+    chip_key = aliases.get(chip_name, aliases.get(chip_name.upper(), chip_name))
+    chip = getattr(pq.real_chip_type, chip_key, None)
     if chip is None:
-        chip = chip_name
+        try:
+            chip = int(chip_name)
+        except ValueError:
+            chip = chip_name
+    # async_real_chip_measure requires chip_id: int (enum .value or bare int).
+    chip_id: Any = getattr(chip, "value", chip)
     job_id = None
     raw: Any = None
     try:
@@ -391,28 +405,28 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
         try:
             if hasattr(machine, "async_real_chip_measure"):
                 job_id = machine.async_real_chip_measure(
-                    payload, shots, chip_id=chip, task_name="LoomQ-L1"
+                    payload, shots, chip_id=chip_id, task_name="LoomQ-L1"
                 )
             else:
                 raw = machine.real_chip_measure(
-                    payload, shots, chip_id=chip, task_name="LoomQ-L1"
+                    payload, shots, chip_id=chip_id, task_name="LoomQ-L1"
                 )
         except Exception as originir_exc:
             try:
                 prog = _qprog_from_qasm(pq, machine, qasm2)
                 if hasattr(machine, "async_real_chip_measure"):
                     job_id = machine.async_real_chip_measure(
-                        prog, shots, chip_id=chip, task_name="LoomQ-L1"
+                        prog, shots, chip_id=chip_id, task_name="LoomQ-L1"
                     )
                 else:
                     raw = machine.real_chip_measure(
-                        prog, shots, chip_id=chip, task_name="LoomQ-L1"
+                        prog, shots, chip_id=chip_id, task_name="LoomQ-L1"
                     )
                     job_id = None
             except Exception as qprog_exc:
                 raise RuntimeError(
                     "OriginQ Wukong submit failed for both OriginIR and QProg "
-                    f"payloads (chip={chip_name!r}): "
+                    f"payloads (chip={chip_name!r} resolved={chip_id!r}): "
                     f"originir={originir_exc!r}; qprog={qprog_exc!r}"
                 ) from qprog_exc
 
@@ -458,6 +472,7 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
             "qubits": circuit.n_qubits(),
             "target_ir": "originir",
             "chip": chip_name,
+            "chip_id": chip_id,
             "mode": "wukong",
         },
     )

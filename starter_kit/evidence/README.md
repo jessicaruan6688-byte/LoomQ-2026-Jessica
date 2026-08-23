@@ -13,7 +13,9 @@
 ```
 
 1. 第一屏：量旋真机 Bell `G-260809-0018`，柱状图主峰 **00/11**（归档回放，不排队）。  
+   任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61210  
 2. 点「再看三枚硬币」或 `?demo=ghz3` / `?exp=ghz3`：GHZ `S-260810-0001`，主峰 **000/111**。  
+   任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61216  
 3. L2 三项：`?demo=repair` 语法说明 · `?demo=backend` 15 比特零排队能力表 · 任务 1 GHZ 需 `LOOMQ_LLM_*` 调 Agent。  
 
 **目标用户**：已有 OpenQASM/多 SDK 经验的产品与开发——一份中间层 + 可溯源真机 job，而不是再学三家方言。
@@ -26,7 +28,7 @@
 | AphrixZjr | #32 | 全勾 | Origin+SpinQ 脚本化 | Docker compose + web 单测 |
 | tale03 | #39 | 全勾 | 量旋+本源材料 | Flask `app.py` :5000 |
 | AzureWynn | #45 | 全勾 | 量旋 2q+3q（G/S-260817） | CLI 为主，无 Web |
-| **本队** | **#56** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
+| **本队** | **#62** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
 | hongwei-2026 | #50 | 全勾 | 量旋 1 job（G-260820-0003） | `loomq_web.py` :8765 |
 | HpIahtcthocw | #27 | 全勾 | 量旋 2q+3q（同构） | 文档为主 |
 | WayneYu1212 | #52 | 全勾 | evidence 空 | 待现场 |
@@ -34,7 +36,7 @@
 | Jimmy658 | #38 | 全勾 | Issue 真机空 | L2 Agent |
 | lyl2222 | #37 | 无 L3 | 量旋 1 job | `web_app.py` |
 
-> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**对照表已对齐 #56（`ecb00be`）；本 commit 修正过期文案，以截止前最后一次 `submission:accepted` Issue 为准。**
+> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**对照表对齐 #62（`71fc6ae`）；本 commit 含本源 chip 映射与维护重试记录，以截止前最后一次 `submission:accepted` Issue 为准。**
 
 ## 本包相对前 Issue (#42) 新增（须进 commit）
 
@@ -100,7 +102,7 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 判定：有效（H + 两级 CNOT；实验主峰在 000/111，有 NISQ 泄漏）
 ```
 
-### 待补：本源悟空（120s 机时已开放；2026-08-19/20 云接口仍返回维护，未产生可溯源 job）
+### 待补：本源悟空（120s 机时窗口；云侧多次维护，尚未产生可溯源 job）
 
 ```text
 平台名称：本源悟空（超导）
@@ -112,9 +114,12 @@ shots：256（计划）
 任务页截图：[维护成功后选填]
 ```
 
-2026-08-19 与 2026-08-20 17:30 (UTC+8)：`async_real_chip_measure` 均返回 `Quantum computer under maintenance`；见 `originq-bell-result.json`。
+维护重试记录（均无 job_id，不申报真机分）：
+- 2026-08-19、2026-08-20 17:30 (UTC+8)
+- 2026-08-23 12:36 / 13:17 (UTC+8)：`LOOMQ_ORIGINQ_MODE=wukong`，`LOOMQ_ORIGINQ_CHIP=WK_C180`（pyqpanda 映射为 `chip_id=72` / `origin_72`），`TIMEOUT_SEC=120`，shots=256 → 仍返回 `Quantum computer under maintenance`
+
 量旋双平台已满足人工真机 10 分上限；本源用于「两家中国云」答辩叙事，非第 11 分。
-本源重试：`LOOMQ_ORIGINQ_MODE=wukong` + `LOOMQ_ORIGINQ_CHIP=WK_C180`（或云上当时可用后端，不必死磕 `origin_72`）。
+重试命令：`./starter_kit/tools/try_originq_bell.sh`（成功后更新本段 job ID，并开新 Final Issue）。
 
 ## L2 交互体验
 
