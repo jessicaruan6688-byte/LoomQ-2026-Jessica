@@ -40,7 +40,7 @@
 | AphrixZjr | #32 | Origin+SpinQ 多 job | Docker + Web |
 | WayneYu1212 | #69 | 量旋+本源厚证据 | :8765 |
 | mayloveless / tale03 / 2IKK12 / Junkai 等 | 见官方 accepted 列表 | 双云居多 | 各有 Web/CLI |
-| **本队** | **#109**（以截止前最后一次 accepted 为准） | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765 真机回放** |
+| **本队** | **#112**（以截止前最后一次 accepted 为准） | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765**；踩坑笔记 + 本地 8/8·7/7·9/9 回归 |
 
 > 自动分看隐藏测例；人工分看可溯源 job、L2 现场、工程复现。本 commit 含本源成功证据与 chip=180 修复。
 
@@ -179,11 +179,21 @@ shots：100
   cd starter_kit && docker build -t loomq-submission . && docker run --rm loomq-submission
   # 自测请用已装 SDK 的 venv（系统 python3 常缺 spinqit/braket/pyqpanda）：
   PY=../LoomQ-2026-Jessica/.venv/bin/python
-  PYTHONPATH=starter_kit "$PY" starter_kit/evaluator.py --level declared --target spinq,braket,originq
+  export PYTHONPATH=starter_kit
 架构说明：starter_kit/docs/ARCHITECTURE.md
 厂商适配踩坑（chip 180 / set_configure / SDK 假失败 / 量旋空电路）：见上文「本源 / 量旋适配踩坑」
 目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「评委现场」
 完整使用流程：starter_kit/README.md「一分钟上手」；走查口述：docs/JUDGE_DEMO_SCRIPT.md
+
+本地回归数字墙（2026-08-24，解释器 $PY 如上；非隐藏测例、非正式分数）：
+  1) "$PY" evaluator.py --level declared --target spinq,braket,originq
+     → {"passed": 8, "failed": 0, "total": 8}
+       L1 bell/ghz3 × spinq+braket+originq 保真度 6/6；L2 public-ghz；L3 public-branch
+  2) "$PY" tests/test_hybrid.py
+     → 7/7 passed（含 randomized differential / flat chains）
+  3) "$PY" tests/test_agent_unit.py
+     → 9/9 OK（白名单拒绝、重试接受合法 QASM、backend 容量重试等）
+说明：系统裸 python3 会因缺 SDK 报 L1 ImportError，不代表实现失败；正式评测在固定容器装依赖。
 ```
 
 ## 自定义量子 RISC-V Bonus
