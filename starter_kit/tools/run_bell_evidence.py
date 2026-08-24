@@ -85,7 +85,18 @@ def main() -> int:
             )
             return 2
 
-    result = run(BELL, args.platform, args.shots)
+    try:
+        result = run(BELL, args.platform, args.shots)
+    except Exception as exc:
+        # If a job_id is already in the message, print it loudly — never resubmit.
+        print(f"OriginQ/SpinQ run failed: {exc}", file=sys.stderr)
+        print(
+            "If a job_id appears above, open the cloud console and archive that job. "
+            "Do not rerun this script to 'retry' the same submission.",
+            file=sys.stderr,
+        )
+        return 1
+
     backend = str(result.get("backend", ""))
     if not args.allow_simulator and (
         "sim" in backend.lower() or "local" in backend.lower()
@@ -104,19 +115,44 @@ def main() -> int:
     result_path = out_dir / f"{args.platform}-bell-result-{stamp}.json"
     canonical = out_dir / f"{args.platform}-bell-result.json"
     qasm_path.write_text(BELL, encoding="utf-8")
-    payload = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
+
+    meta = result.get("meta") if isinstance(result.get("meta"), dict) else {}
+    originir = meta.get("submitted_originir")
+    if args.platform == "originq" and isinstance(originir, str) and originir.strip():
+        ir_path = out_dir / "originq-bell.originir"
+        ir_path.write_text(originir if originir.endswith("\n") else originir + "\n", encoding="utf-8")
+        print("wrote", ir_path)
+
+    # Canonical evidence JSON: keep schema fields; stash submitted IR paths in note-friendly meta.
+    evidence = dict(result)
+    evidence_meta = dict(meta)
+    evidence_meta.pop("submitted_originir", None)  # already written as .originir file
+    evidence_meta.pop("submitted_qasm", None)
+    evidence_meta["evidence_qasm"] = str(qasm_path.relative_to(ROOT))
+    if args.platform == "originq":
+        evidence_meta["evidence_originir"] = "evidence/files/originq-bell.originir"
+    evidence["meta"] = evidence_meta
+
+    payload = json.dumps(evidence, ensure_ascii=False, indent=2) + "\n"
     result_path.write_text(payload, encoding="utf-8")
     canonical.write_text(payload, encoding="utf-8")
 
     print("wrote", qasm_path)
     print("wrote", result_path)
-    print("backend:", result.get("backend"))
-    print("job_id:", result.get("job_id"))
-    print("shots:", result.get("shots"))
-    print("counts:", result.get("counts"))
+    print("wrote", canonical)
+    print("backend:", evidence.get("backend"))
+    print("job_id:", evidence.get("job_id"))
+    print("shots:", evidence.get("shots"))
+    print("counts:", evidence.get("counts"))
+    print("chip_id:", evidence_meta.get("chip_id"))
+    counts = evidence.get("counts") or {}
+    if isinstance(counts, dict) and counts:
+        peak = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:2]
+        print("top counts:", peak)
     print(
-        "Next: fill starter_kit/evidence/README.md with platform/job_id/paths "
-        "(keep API keys out of git)."
+        "SUCCESS path: fill starter_kit/evidence/README.md (job_id/time/chip/shots/"
+        "00+11 peaks), commit+push, then open a NEW Final Issue only after that. "
+        "Keep API keys out of git. MODE back to local after the run."
     )
     return 0
 

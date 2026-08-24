@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# One-shot OriginQ Wukong Bell evidence attempt (120s wall clock).
+# One-shot OriginQ Wukong Bell evidence attempt.
 # Secrets stay in starter_kit/.env (gitignored). Does not open a Final Issue.
+#
+# Live chip is numeric chipId=180 (WK_C180). Do NOT map to retired origin_72/72.
+# Default shots=100 — on success, stop; never resubmit the same Bell to "confirm".
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -21,13 +24,14 @@ for candidate in \
 done
 
 export LOOMQ_ORIGINQ_MODE="${LOOMQ_ORIGINQ_MODE:-wukong}"
-# Official Q&A allows WK_C180; backends.py maps it to pyqpanda chip_id=72.
-export LOOMQ_ORIGINQ_CHIP="${LOOMQ_ORIGINQ_CHIP:-WK_C180}"
+# Prefer bare 180; WK_C180 / wukong aliases also resolve to 180 in backends.py.
+export LOOMQ_ORIGINQ_CHIP="${LOOMQ_ORIGINQ_CHIP:-180}"
 export LOOMQ_ORIGINQ_TIMEOUT_SEC="${LOOMQ_ORIGINQ_TIMEOUT_SEC:-120}"
 export LOOMQ_ORIGINQ_POLL_SEC="${LOOMQ_ORIGINQ_POLL_SEC:-2}"
 export PYTHONPATH="$ROOT"
 
-SHOTS="${1:-256}"
+SHOTS="${1:-100}"
 echo "OriginQ Bell attempt: mode=$LOOMQ_ORIGINQ_MODE chip=$LOOMQ_ORIGINQ_CHIP timeout=${LOOMQ_ORIGINQ_TIMEOUT_SEC}s shots=$SHOTS"
 echo "python: $PY"
+echo "If you already have a job_id, do NOT rerun — open console.originqc.com.cn and archive that job."
 exec "$PY" "$ROOT/tools/run_bell_evidence.py" --platform originq --shots "$SHOTS"

@@ -265,6 +265,46 @@ def _originq_wants_cloud() -> bool:
     return mode in {"wukong", "cloud", "qpu", "real", "chip"}
 
 
+# Live Wukong QPU is chipId 180. pyqpanda's real_chip_type.origin_72 still points
+# at the retired 72-qubit resource; wrong/unknown chips often reply "under
+# maintenance", which must not be read as a platform-wide outage.
+ORIGINQ_DEFAULT_CHIP_ID = 180
+ORIGINQ_CHIP_ALIASES = {
+    "180": 180,
+    "wk_c180": 180,
+    "wk_c180_2": 180,
+    "wukong": 180,
+    "wukong_180": 180,
+    "origin_wukong": 180,
+    "origin_180": 180,
+    "72": 72,
+    "origin_72": 72,
+    "wukong_72": 72,
+}
+
+
+def _resolve_originq_chip_id(chip_name: str, pq: Any) -> int:
+    """Return the numeric chipId the OriginQ cloud API expects."""
+    text = (chip_name or "").strip()
+    if not text:
+        return ORIGINQ_DEFAULT_CHIP_ID
+    alias = ORIGINQ_CHIP_ALIASES.get(text) or ORIGINQ_CHIP_ALIASES.get(text.lower())
+    if alias is not None:
+        return alias
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    member = getattr(getattr(pq, "real_chip_type", None), text, None)
+    if member is not None:
+        return int(getattr(member, "value", member))
+    raise ValueError(
+        f"unknown OriginQ chip {chip_name!r}; use numeric chipId "
+        f"(live Wukong is {ORIGINQ_DEFAULT_CHIP_ID}) or one of "
+        f"{sorted(ORIGINQ_CHIP_ALIASES)}"
+    )
+
+
 def _probs_to_counts(raw: Mapping[Any, Any], shots: int, n_bits: int) -> Dict[str, int]:
     """Convert cloud probability maps (or already-integer counts) into shot counts."""
     items: List[Tuple[str, float]] = []
@@ -376,29 +416,14 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
     qasm2 = emit_spinq_qasm2(circuit)
     originir = emit_originir(circuit)
     machine = pq.QCloud()
-    if hasattr(machine, "set_configure"):
-        machine.set_configure(72, 72)
+    # Do NOT call set_configure(72, 72): it can clear QCloud init state and make
+    # later submits look like permanent "maintenance" (see public competitor notes).
     machine.init_qvm(token, False)
-    chip_name = (os.environ.get("LOOMQ_ORIGINQ_CHIP") or "origin_72").strip()
-    # Official Q&A allows WK_C180; pyqpanda QCloud still expects real_chip_type / int.
-    aliases = {
-        "WK_C180": "origin_72",
-        "WK_C180_2": "origin_72",
-        "wukong": "origin_72",
-        "wukong_72": "origin_72",
-        "72": "origin_72",
-    }
-    chip_key = aliases.get(chip_name, aliases.get(chip_name.upper(), chip_name))
-    chip = getattr(pq.real_chip_type, chip_key, None)
-    if chip is None:
-        try:
-            chip = int(chip_name)
-        except ValueError:
-            chip = chip_name
-    # async_real_chip_measure requires chip_id: int (enum .value or bare int).
-    chip_id: Any = getattr(chip, "value", chip)
+    chip_name = (os.environ.get("LOOMQ_ORIGINQ_CHIP") or str(ORIGINQ_DEFAULT_CHIP_ID)).strip()
+    chip_id = _resolve_originq_chip_id(chip_name, pq)
     job_id = None
     raw: Any = None
+    poll_errors: List[str] = []
     try:
         # Prefer OriginIR when the cloud accepts strings; fall back to QProg.
         payload: Any = originir
@@ -426,24 +451,36 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
             except Exception as qprog_exc:
                 raise RuntimeError(
                     "OriginQ Wukong submit failed for both OriginIR and QProg "
-                    f"payloads (chip={chip_name!r} resolved={chip_id!r}): "
-                    f"originir={originir_exc!r}; qprog={qprog_exc!r}"
+                    f"payloads (chip={chip_name!r} resolved_chip_id={chip_id!r}): "
+                    f"originir={originir_exc!r}; qprog={qprog_exc!r}. "
+                    "Wrong chipId often reports as 'under maintenance' — "
+                    f"live Wukong is chipId={ORIGINQ_DEFAULT_CHIP_ID}."
                 ) from qprog_exc
 
         if job_id is not None:
-            # Poll until the cloud returns a terminal payload.
+            # Poll the same job_id until finished. On timeout / SDK parse errors,
+            # keep the id so the operator can query the console — never resubmit.
             raw = None
             status_fn = getattr(machine, "query_task_state_result", None)
             if status_fn is None:
                 raise RuntimeError(
-                    f"submitted Wukong task {job_id!r} but query_task_state_result is unavailable"
+                    f"submitted Wukong task {job_id!r} but query_task_state_result is unavailable; "
+                    "do not resubmit — open the console with this job_id"
                 )
             import time
 
             deadline = time.time() + int(os.environ.get("LOOMQ_ORIGINQ_TIMEOUT_SEC", "1800"))
             poll = max(1.0, float(os.environ.get("LOOMQ_ORIGINQ_POLL_SEC", "2")))
             while time.time() < deadline:
-                state_payload = status_fn(str(job_id), True)
+                try:
+                    state_payload = status_fn(str(job_id), True)
+                except Exception as poll_exc:
+                    # Old pyqpanda can choke on a harmless errorMessage beside a
+                    # finished payload ("value is not string"). Keep polling; if
+                    # we never decode, surface job_id for console / REST recovery.
+                    poll_errors.append(repr(poll_exc))
+                    time.sleep(poll)
+                    continue
                 if isinstance(state_payload, tuple) and len(state_payload) >= 2:
                     state, raw = state_payload[0], state_payload[1]
                     finished = getattr(getattr(pq.QCloud, "TaskStatus", object), "FINISHED", None)
@@ -455,7 +492,13 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
                     break
                 time.sleep(poll)
             if raw is None:
-                raise TimeoutError(f"OriginQ Wukong task {job_id} timed out")
+                detail = "; ".join(poll_errors[-3:]) if poll_errors else "no result payload"
+                raise TimeoutError(
+                    f"OriginQ Wukong task {job_id} timed out or SDK failed to parse "
+                    f"results ({detail}). Do NOT resubmit — open "
+                    f"https://console.originqc.com.cn/ with job_id={job_id} "
+                    f"(chip_id={chip_id})."
+                )
     finally:
         if hasattr(machine, "finalize"):
             machine.finalize()
@@ -474,6 +517,8 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
             "chip": chip_name,
             "chip_id": chip_id,
             "mode": "wukong",
+            "submitted_originir": originir,
+            "submitted_qasm": qasm2,
         },
     )
 

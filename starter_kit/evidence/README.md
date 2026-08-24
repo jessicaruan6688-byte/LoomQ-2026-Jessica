@@ -102,24 +102,28 @@ shots：结果页以投影概率为主展示（未在页头标明整数 shots；
 判定：有效（H + 两级 CNOT；实验主峰在 000/111，有 NISQ 泄漏）
 ```
 
-### 待补：本源悟空（120s 机时窗口；云侧多次维护，尚未产生可溯源 job）
+### 待补：本源悟空（120s 机时；成功后才更新本段并开新 Final Issue）
 
 ```text
-平台名称：本源悟空（超导）
-平台 job ID：[维护结束后填写]
-运行时间：[维护结束后填写]
-shots：256（计划）
-实际执行的 QASM：evidence/files/originq-bell.qasm（与量旋 Bell 同语义）
-平台返回的原始结果：evidence/files/originq-bell-result.json（维护失败记录，非有效真机分）
-任务页截图：[维护成功后选填]
+平台名称：本源悟空（超导，chipId=180 / WK_C180）
+平台 job ID：[成功后填写]
+运行时间：[成功后填写]
+shots：100（计划；与 Wilder 公开实测同量级可用 1000，机时紧用 100）
+实际执行的 QASM：evidence/files/originq-bell.qasm
+实际提交 OriginIR：evidence/files/originq-bell.originir（成功跑通后由脚本写出）
+平台返回的原始/归一化结果：evidence/files/originq-bell-result.json
+主峰结论：[成功后写 00/11]
+任务页截图：[选填]
 ```
 
-维护重试记录（均无 job_id，不申报真机分）：
-- 2026-08-19、2026-08-20 17:30 (UTC+8)
-- 2026-08-23 12:36 / 13:17 (UTC+8)：`LOOMQ_ORIGINQ_MODE=wukong`，`LOOMQ_ORIGINQ_CHIP=WK_C180`（pyqpanda 映射为 `chip_id=72` / `origin_72`），`TIMEOUT_SEC=120`，shots=256 → 仍返回 `Quantum computer under maintenance`
+失败/排查记录（均无有效 job，不申报真机分）：
+- 2026-08-19、2026-08-20、2026-08-23：`WK_C180` **被错误映射为 chip_id=72（已退役 origin_72）**，平台对错误 chip 也常回 `under maintenance`，不能据此断定整机维护。
+- 对照 Wilder/Aphrix 公开证据：有效真机为 **chipId=180**；Bell 例（Wilder）1000 shots → 00:457 / 11:489。
+- 本仓已改为默认 `LOOMQ_ORIGINQ_CHIP=180`，并去掉 `set_configure(72,72)`；轮询超时/SDK 解析异常会保留 job_id，**禁止因超时重发**。
 
-量旋双平台已满足人工真机 10 分上限；本源用于「两家中国云」答辩叙事，非第 11 分。
-重试命令：`./starter_kit/tools/try_originq_bell.sh`（成功后更新本段 job ID，并开新 Final Issue）。
+量旋双平台已满足人工真机 10 分上限；本源用于「两家中国云」叙事，非第 11 分。
+**仅当本源成功证据已写入仓库并 push 后**，再开新 Final Issue 指向新 commit；勿为失败日志单独换 Issue。
+绿灯一发：`./starter_kit/tools/try_originq_bell.sh 100`（成功即停，`.env` 改回 `LOOMQ_ORIGINQ_MODE=local`）。
 
 ## L2 交互体验
 
