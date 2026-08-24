@@ -17,7 +17,7 @@
     "mode": "wukong",
     "target_ir": "originir",
     "task_state": 3,
-    "platform_create_time": "2026-08-24 13:14:21.767",
+    "platform_create_time": null,
     "platform_upd_time": null,
     "platform_total_time": 0,
     "probabilities": {
@@ -33,11 +33,6 @@
     "evidence_qasm": "evidence/files/originq-bell.qasm",
     "evidence_originir": "evidence/files/originq-bell.originir",
     "evidence_rest": "evidence/files/originq-bell-rest-detail.json",
-    "peaks": "00/11 (Bell)",
-    "platform_start_time": "2026-08-24 13:14:25.809",
-    "platform_end_time": "2026-08-24 13:17:56.779",
-    "platform_actual_start_time": "2026-08-24 13:14:21.929",
-    "pulse_time_ns": "120",
-    "physical_qubits": "[157, 166]"
+    "peaks": "00/11 (Bell)"
   }
 }

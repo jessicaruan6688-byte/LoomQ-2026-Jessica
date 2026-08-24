@@ -14,10 +14,20 @@ else
   PY=python
 fi
 # Prefer a venv that already has pyqpanda when available.
+# ROOT is starter_kit/; sibling clone lives next to this repo root.
+REPO_ROOT="$(cd "$ROOT/.." && pwd)"
+PARENT="$(cd "$REPO_ROOT/.." && pwd)"
 for candidate in \
-  "$ROOT/../LoomQ-2026-Jessica/.venv/bin/python" \
+  "$PARENT/LoomQ-2026-Jessica/.venv/bin/python" \
+  "$REPO_ROOT/.venv/bin/python" \
   "$ROOT/.venv/bin/python"; do
-  if [ -x "$candidate" ] && "$candidate" -c "import pyqpanda" 2>/dev/null; then
+  if [ ! -x "$candidate" ]; then
+    continue
+  fi
+  # Prefer path that ships pyqpanda even if a sandboxed import probe segfaults.
+  if "$candidate" -c "import pyqpanda" 2>/dev/null \
+    || [ -d "$(dirname "$candidate")/../lib/python3.10/site-packages/pyqpanda" ] \
+    || ls "$(dirname "$candidate")/../lib"/python*/site-packages/pyqpanda >/dev/null 2>&1; then
     PY="$candidate"
     break
   fi

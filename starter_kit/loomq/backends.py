@@ -481,11 +481,12 @@ def run_originq_wukong(circuit: Circuit, shots: int) -> Dict[str, Any]:
                     poll_errors.append(repr(poll_exc))
                     time.sleep(poll)
                     continue
-                if isinstance(state_payload, tuple) and len(state_payload) >= 2:
+                if isinstance(state_payload, (tuple, list)) and len(state_payload) >= 2:
                     state, raw = state_payload[0], state_payload[1]
                     finished = getattr(getattr(pq.QCloud, "TaskStatus", object), "FINISHED", None)
-                    finished_value = getattr(finished, "value", 0)
-                    if state == finished_value or raw:
+                    finished_value = getattr(finished, "value", 3)
+                    # Platform taskState 3 == finished (also returned as bare int).
+                    if state == finished_value or state == 3 or raw:
                         break
                 elif isinstance(state_payload, dict):
                     raw = state_payload
