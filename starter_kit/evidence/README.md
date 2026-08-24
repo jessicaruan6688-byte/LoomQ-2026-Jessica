@@ -6,48 +6,53 @@
 
 ## 评委现场（30 秒）
 
+**为谁：** 会写软件、但不想同时学 SpinQ / OriginIR / Braket 三套方言的人——先看可溯源真机主峰，再用自然语言改电路。
+
 ```bash
-# fork 根目录
+# fork 根目录（本机）
 ./start_demo.sh
 # → http://127.0.0.1:8765/
 ```
 
-1. 第一屏：量旋真机 Bell `G-260809-0018`，柱状图主峰 **00/11**（归档回放，不排队）。  
-   任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61210  
-2. 点「再看三枚硬币」或 `?demo=ghz3` / `?exp=ghz3`：GHZ `S-260810-0001`，主峰 **000/111**。  
-   任务页：https://cloud.spinq.cn/circuitDesign/taskResult/61216  
-3. L2 三项：`?demo=repair` 语法说明 · `?demo=backend` 15 比特零排队能力表 · 任务 1 GHZ 需 `LOOMQ_LLM_*` 调 Agent。  
+| 秒 | 动作 | 应看到 |
+|---:|---|---|
+| 0–10 | 打开首页 | 量旋真机 Bell 归档柱状图，主峰 **00/11**；job `G-260809-0018` |
+| 10–20 | 点「再看三枚硬币」或打开 `?demo=ghz3` | GHZ 主峰 **000/111**；job `S-260810-0001` |
+| 20–30 | 打开 `?demo=repair` 或 `?demo=backend` | 修 Bell 语法说明 / 15 比特零排队能力表（不排队、不烧机时） |
 
-**目标用户**：已有 OpenQASM/多 SDK 经验的产品与开发——一份中间层 + 可溯源真机 job，而不是再学三家方言。
+溯源链接（评委可点）：
+- 量旋 Bell：https://cloud.spinq.cn/circuitDesign/taskResult/61210  
+- 量旋 GHZ：https://cloud.spinq.cn/circuitDesign/taskResult/61216  
+- 本源 Bell job（控制台搜）：`724E511297B861472AA2441F90F3D5E6` · https://console.originqc.com.cn/  
 
-## 公开态势对照（2026-08-20 傍晚，仅 Issue 回执 + evidence 头）
+**口述三句（走查）：**  
+1）L1 是统一 IR，不是三套 if-else 硬编码。  
+2）本源必须用 **chipId=180**；误用退役 72 会假性「维护中」。  
+3）真机结果均可在云控制台用 job id 复核；Demo 第一屏是归档回放，不扣机时。  
 
-| 队 | 最后 Issue | L1–L3 | 真机叙事 | L2/产品公开面 |
-|---|---|---|---|---|
-| WilderNoTrack | #31 | 全勾 | **量旋+本源**，各 2 job | `python3 -m loomq web` :8787 |
-| AphrixZjr | #32 | 全勾 | Origin+SpinQ 脚本化 | Docker compose + web 单测 |
-| tale03 | #39 | 全勾 | 量旋+本源材料 | Flask `app.py` :5000 |
-| AzureWynn | #45 | 全勾 | 量旋 2q+3q（G/S-260817） | CLI 为主，无 Web |
-| **本队** | **#62** | **全勾** | **量旋 2q+3q 满 10 分**；本源维护中 | **`./start_demo.sh` 真机回放 Web** |
-| hongwei-2026 | #50 | 全勾 | 量旋 1 job（G-260820-0003） | `loomq_web.py` :8765 |
-| HpIahtcthocw | #27 | 全勾 | 量旋 2q+3q（同构） | 文档为主 |
-| WayneYu1212 | #52 | 全勾 | evidence 空 | 待现场 |
-| yiyuanrvk77 | #36 | 全勾 | 量旋 1 台 | `web_demo.py` 柱状图 |
-| Jimmy658 | #38 | 全勾 | Issue 真机空 | L2 Agent |
-| lyl2222 | #37 | 无 L3 | 量旋 1 job | `web_app.py` |
+更完整的 3 分钟稿：`docs/JUDGE_DEMO_SCRIPT.md`。
 
-> 非官方排名。自动分取决于隐藏测例；人工分看真机 job、L2 现场、工程复现。**对照表对齐 #62（`71fc6ae`）；本 commit 含本源 chip 映射与维护重试记录，以截止前最后一次 `submission:accepted` Issue 为准。**
+## 公开态势对照（2026-08-24，公开 Issue + evidence；非官方排名）
 
-## 本包相对前 Issue (#42) 新增（须进 commit）
+| 队 | 最后 Issue | 真机公开面 | 产品面 |
+|---|---|---|---|
+| WilderNoTrack | #31 | 量旋+本源 | Web :8787 |
+| AphrixZjr | #32 | Origin+SpinQ 多 job | Docker + Web |
+| WayneYu1212 | #69 | 量旋+本源厚证据 | :8765 |
+| mayloveless / tale03 / 2IKK12 / Junkai 等 | 见官方 accepted 列表 | 双云居多 | 各有 Web/CLI |
+| **本队** | **#109**（以截止前最后一次 accepted 为准） | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765 真机回放** |
+
+> 自动分看隐藏测例；人工分看可溯源 job、L2 现场、工程复现。本 commit 含本源成功证据与 chip=180 修复。
+
+## 本包相对早期 Issue 的评委入口资产
 
 | 路径 | 作用 |
 |---|---|
 | `start_demo.sh` | fork 根目录一键启动 |
-| `starter_kit/web/index.html` `style.css` `app.js` | 真机回放第一屏 + 三项任务 + 能力表 |
-| `starter_kit/web/server.py` | `/api/experiments` 归档回放、`/api/simulate` 本地验算 |
-| `starter_kit/tools/start_l2_web.sh` | 端口占用检测、自动开浏览器 |
-| `starter_kit/evidence/files/l2-web-*.png` | L2 四项截图 |
-| `starter_kit/evidence/README.md` | 本文件（评委入口 + 对照） |
+| `starter_kit/web/*` | 真机回放第一屏 + 三项任务 |
+| `starter_kit/evidence/files/spinq-*` | 量旋 Bell/GHZ |
+| `starter_kit/evidence/files/originq-*` | 本源 Bell（含 REST 原始详情） |
+| `starter_kit/evidence/README.md` | 本文件 |
 
 ## 提交前填写
 
