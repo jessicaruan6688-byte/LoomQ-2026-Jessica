@@ -122,12 +122,29 @@ shots：100
 判定：有效真机（chipId=180）。本地 SDK 轮询曾超时并附带无害 errorMessage「司南系统读取任务失败。」；已用 getTaskDetail 恢复，未重交。
 ```
 
-历史排查（早期无 job / 错误 chip，不替代上方成功证据）：
-- 2026-08-19～23：`WK_C180` 曾被错误映射为 chip_id=72（退役），平台对错误 chip 也常回 `under maintenance`。
-- 对照 Wilder：有效真机为 chipId=180。本仓默认 `LOOMQ_ORIGINQ_CHIP=180`。
+### 本源 / 量旋适配踩坑（工程笔记 · 走查可讲）
 
-量旋双平台 + 本源均有可溯源 job；人工真机分仍按规则上限 10（两平台封顶）。本源用于「两家中国云」叙事。
-成功后勿再跑 `try_originq_bell.sh`；`.env` 保持 `LOOMQ_ORIGINQ_MODE=local`。归档进仓并 push 后开新 Final Issue。
+这些是本队真实排障记录，不是模拟器结果；用于说明「通用中间层」如何消化厂商差异。
+
+1. **chipId=72 vs 180（假维护）**  
+   官方 Q&A 写 `WK_C180`，旧 pyqpanda `real_chip_type.origin_72` 仍指向**已退役 72 比特**资源。把 `WK_C180` 映射成 72 时，云端常返回 `Quantum computer under maintenance`。  
+   **结论：** 错误/未知 chip 与整机维护文案相同，不能据此断定平台全局不可用。有效真机为 **chipId=180**；本仓 `LOOMQ_ORIGINQ_CHIP` 默认 `180`（`WK_C180`/`wukong` 别名同映射到 180）。
+
+2. **`set_configure(72, 72)` 有害**  
+   在 `QCloud.init_qvm` 之后调用 `set_configure(72, 72)` 可能清掉初始化状态，后续提交表现 similarly like 永久维护。  
+   **结论：** 云路径已去掉该调用。
+
+3. **SDK 轮询失败 ≠ 任务失败**  
+   job `724E511297B861472AA2441F90F3D5E6` 已提交成功；本地 `query_task_state_result` 曾报 `query task error : None` / 超时。REST `getTaskDetail` 显示 `taskState=3`（完成），`probCount`/`taskResult` 主峰 00/11；记录里附带无害 `errorMessage`「司南系统读取任务失败。」  
+   **结论：** 先保存 job_id，用控制台或 REST 取结果；**禁止因超时重交**（浪费机时、制造重复证据）。恢复脚本：`tools/_fetch_originq_task_rest.py`。
+
+4. **量旋无效对照（勿计分）**  
+   `G-260802-0004` 仅有 `qreg`、无门 → 不计真机分。有效证据必须是含 H/CNOT 的 Bell/GHZ 任务（见上方 G/S job）。
+
+5. **机时与模式**  
+   成功一发后 `.env` 保持 `LOOMQ_ORIGINQ_MODE=local`，避免评测/本地误打真机。
+
+量旋双平台 + 本源均有可溯源 job；人工真机分仍按规则上限 10（两平台封顶）。本源用于「两家中国云」叙事与适配深度，不是第 11 分。
 
 ## L2 交互体验
 
@@ -160,10 +177,13 @@ shots：100
 干净环境中的构建和启动命令：
   ./start_demo.sh
   cd starter_kit && docker build -t loomq-submission . && docker run --rm loomq-submission
-  PYTHONPATH=starter_kit python starter_kit/evaluator.py --level declared --target spinq,braket,originq
+  # 自测请用已装 SDK 的 venv（系统 python3 常缺 spinqit/braket/pyqpanda）：
+  PY=../LoomQ-2026-Jessica/.venv/bin/python
+  PYTHONPATH=starter_kit "$PY" starter_kit/evaluator.py --level declared --target spinq,braket,originq
 架构说明：starter_kit/docs/ARCHITECTURE.md
+厂商适配踩坑（chip 180 / set_configure / SDK 假失败 / 量旋空电路）：见上文「本源 / 量旋适配踩坑」
 目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「评委现场」
-完整使用流程：starter_kit/README.md「一分钟上手」
+完整使用流程：starter_kit/README.md「一分钟上手」；走查口述：docs/JUDGE_DEMO_SCRIPT.md
 ```
 
 ## 自定义量子 RISC-V Bonus
