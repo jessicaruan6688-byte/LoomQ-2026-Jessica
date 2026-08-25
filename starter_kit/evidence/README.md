@@ -4,33 +4,33 @@
 
 证据包是可选的。没有申报某项人工分时，留空即可，不影响自动评分。
 
-## 评委现场（30 秒）
+## 远程评委 5 分钟复现
 
 **为谁：** 会写软件、但不想同时学 SpinQ / OriginIR / Braket 三套方言的人——先看可溯源真机主峰，再用自然语言改电路。
 
 ```bash
-# fork 根目录（本机）
+# fork 根目录（任意干净环境）
 ./start_demo.sh
 # → http://127.0.0.1:8765/
 ```
 
-| 秒 | 动作 | 应看到 |
-|---:|---|---|
-| 0–10 | 打开首页 | 量旋真机 Bell 归档柱状图，主峰 **00/11**；job `G-260809-0018` |
-| 10–20 | 点「再看三枚硬币」或打开 `?demo=ghz3` | GHZ 主峰 **000/111**；job `S-260810-0001` |
-| 20–30 | 打开 `?demo=repair` 或 `?demo=backend` | 修 Bell 语法说明 / 15 比特零排队能力表（不排队、不烧机时） |
+| 步 | 动作 | 应看到 |
+|---|---|---|
+| 1 | 打开 `/` | 量旋真机 Bell 归档柱状图，主峰 **00/11**；job `G-260809-0018`；lede 含本源双云一句 |
+| 2 | 打开 `?demo=ghz3`（或点「再看三枚硬币」） | GHZ 主峰 **000/111**；job `S-260810-0001` |
+| 3 | 打开 `?demo=repair` 或 `?demo=backend` | 修 Bell 语法说明 / 15 比特零排队能力表（不排队、不烧机时） |
 
-溯源链接（评委可点）：
+溯源链接（远程可点）：
 - 量旋 Bell：https://cloud.spinq.cn/circuitDesign/taskResult/61210  
 - 量旋 GHZ：https://cloud.spinq.cn/circuitDesign/taskResult/61216  
-- 本源 Bell job（控制台搜）：`724E511297B861472AA2441F90F3D5E6` · https://console.originqc.com.cn/  
+- 本源 Bell job：`724E511297B861472AA2441F90F3D5E6` · 仓库内打开 `evidence/files/originq-bell-result.json` 与 `originq-bell-rest-detail.json` 即可核验 counts / `taskState=3`（控制台：https://console.originqc.com.cn/）
 
-**口述三句（走查）：**  
+**远程核验三点：**  
 1）L1 是统一 IR，不是三套 if-else 硬编码。  
 2）本源必须用 **chipId=180**；误用退役 72 会假性「维护中」。  
-3）真机结果均可在云控制台用 job id 复核；Demo 第一屏是归档回放，不扣机时。  
+3）真机结果均可在云控制台或本仓 JSON 用 job id 复核；Demo 第一屏是归档回放，不扣机时。  
 
-更完整的 3 分钟稿：`docs/JUDGE_DEMO_SCRIPT.md`。
+更完整的远程核验清单：`docs/JUDGE_DEMO_SCRIPT.md`。
 
 ## 公开态势对照（2026-08-24，公开 Issue + evidence；非官方排名）
 
@@ -40,10 +40,9 @@
 | AphrixZjr | #32 | Origin+SpinQ 多 job | Docker + Web |
 | WayneYu1212 | #69 | 量旋+本源厚证据 | :8765 |
 | mayloveless / tale03 / 2IKK12 / Junkai 等 | 见官方 accepted 列表 | 双云居多 | 各有 Web/CLI |
-| **本队** | **#112**（以截止前最后一次 accepted 为准） | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765**；踩坑笔记 + 本地 8/8·7/7·9/9 回归 |
+| **本队** | **以截止前最后一次 `submission:accepted` 为准** | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765**；踩坑笔记 + 本地 8/8·7/7·9/9 回归 |
 
-> 自动分看隐藏测例；人工分看可溯源 job、L2 现场、工程复现。本 commit 含本源成功证据与 chip=180 修复。
-
+> 自动分看隐藏测例；人工分看可溯源 job、L2 远程复现、工程材料。本 commit 含本源成功证据与 chip=180 修复。
 ## 本包相对早期 Issue 的评委入口资产
 
 | 路径 | 作用 |
@@ -120,12 +119,12 @@ shots：100
 归一化结果：evidence/files/originq-bell-result.json
 主峰结论：00/11（counts 00:50, 01:1, 10:4, 11:45；概率约 0.556 / 0.443）
 判定：有效真机（chipId=180）。本地 SDK 轮询曾超时并附带无害 errorMessage「司南系统读取任务失败。」；已用 getTaskDetail 恢复，未重交。
+远程评委核验（无需控制台截图）：打开 originq-bell-result.json 看 counts；打开 originq-bell-rest-detail.json 确认 taskState=3、chipId=180、物理比特 [157,166]。
 ```
 
-### 本源 / 量旋适配踩坑（工程笔记 · 走查可讲）
+### 本源 / 量旋适配踩坑（工程笔记 · 远程可核）
 
 这些是本队真实排障记录，不是模拟器结果；用于说明「通用中间层」如何消化厂商差异。
-
 1. **chipId=72 vs 180（假维护）**  
    官方 Q&A 写 `WK_C180`，旧 pyqpanda `real_chip_type.origin_72` 仍指向**已退役 72 比特**资源。把 `WK_C180` 映射成 72 时，云端常返回 `Quantum computer under maintenance`。  
    **结论：** 错误/未知 chip 与整机维护文案相同，不能据此断定平台全局不可用。有效真机为 **chipId=180**；本仓 `LOOMQ_ORIGINQ_CHIP` 默认 `180`（`WK_C180`/`wukong` 别名同映射到 180）。
@@ -156,15 +155,15 @@ shots：100
   # 真机回放无需 LOOMQ_LLM_*；Agent 三项需 starter_kit/.env
   cd starter_kit && python tools/l2_chat_cli.py
 测试入口或页面地址：http://127.0.0.1:8765/
-适合现场体验的 3 个用户任务：
-1. 第一屏 Bell 归档（G-260809-0018）或 ?demo=ghz / 任务 1：GHZ 000/111 + Agent OpenQASM
-2. ?demo=repair / 任务 2：三处 OpenQASM 语法坑 + Bell 真机对照
-3. ?demo=backend / 任务 3：15 比特零排队 → 能力表高亮本地模拟器
+适合远程复现的 3 个用户任务：
+   1. 第一屏 Bell 归档（G-260809-0018）或 ?demo=ghz3 / 任务 1：GHZ 000/111 + Agent OpenQASM
+   2. ?demo=repair / 任务 2：三处 OpenQASM 语法坑 + Bell 真机对照
+   3. ?demo=backend / 任务 3：15 比特零排队 → 能力表高亮本地模拟器
 本地实测（2026-08-20，DeepSeek deepseek-v4-flash）：
 1. 通过 — GHZ 返回含 qreg q[3] 的 OpenQASM；页面可对照真机 S-260810-0001
 2. 通过 — 修 Bell 补全头/寄存器/h/cx
 3. 通过 — 回复含 braket_local_simulator 或 originq_local_simulator
-截图或演示视频：
+截图（仓库内可打开，无需线下演示）：
   - 启动 + Bell 真机回放：evidence/files/l2-web-ui-home.png
   - 任务 1 GHZ：evidence/files/l2-web-ghz3-demo.png
   - 任务 2 修 Bell：evidence/files/l2-web-bell-repair-demo.png
@@ -182,8 +181,8 @@ shots：100
   export PYTHONPATH=starter_kit
 架构说明：starter_kit/docs/ARCHITECTURE.md
 厂商适配踩坑（chip 180 / set_configure / SDK 假失败 / 量旋空电路）：见上文「本源 / 量旋适配踩坑」
-目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「评委现场」
-完整使用流程：starter_kit/README.md「一分钟上手」；走查口述：docs/JUDGE_DEMO_SCRIPT.md
+目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「远程评委 5 分钟复现」
+完整使用流程：starter_kit/README.md「一分钟上手」；远程核验清单：docs/JUDGE_DEMO_SCRIPT.md
 
 本地回归数字墙（2026-08-24，解释器 $PY 如上；非隐藏测例、非正式分数）：
   1) "$PY" evaluator.py --level declared --target spinq,braket,originq
