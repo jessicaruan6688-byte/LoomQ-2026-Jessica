@@ -4,33 +4,41 @@
 
 证据包是可选的。没有申报某项人工分时，留空即可，不影响自动评分。
 
-## 远程评委 5 分钟复现
+## 线上评委核验入口
 
 **为谁：** 会写软件、但不想同时学 SpinQ / OriginIR / Braket 三套方言的人——先看可溯源真机主峰，再用自然语言改电路。
 
+评委只看 GitHub 归档与可点链接；**无需参赛队线下演示或本机陪同。**
+
+### A. 纯线上点开（不启动 Demo）
+
+| 项 | 打开即可核 |
+|---|---|
+| 量旋 Bell | https://cloud.spinq.cn/circuitDesign/taskResult/61210 · `evidence/files/spinq-bell-*` |
+| 量旋 GHZ | https://cloud.spinq.cn/circuitDesign/taskResult/61216 · `evidence/files/spinq-ghz3-*` |
+| 本源 Bell | job `724E511297B861472AA2441F90F3D5E6` · `evidence/files/originq-bell-result.json`（counts）+ `originq-bell-rest-detail.json`（`taskState=3` / chipId=180） |
+| L2 界面 | `evidence/files/l2-web-*.png` |
+
+### B. L2 交互（评委从归档 commit 复现时）
+
 ```bash
-# fork 根目录（任意干净环境）
+# 官方归档包 / fork 根目录
 ./start_demo.sh
-# → http://127.0.0.1:8765/
+# → http://127.0.0.1:8765/ 、?demo=ghz3 、?demo=repair 、?demo=backend
 ```
 
-| 步 | 动作 | 应看到 |
+| 步 | URL | 应看到 |
 |---|---|---|
-| 1 | 打开 `/` | 量旋真机 Bell 归档柱状图，主峰 **00/11**；job `G-260809-0018`；lede 含本源双云一句 |
-| 2 | 打开 `?demo=ghz3`（或点「再看三枚硬币」） | GHZ 主峰 **000/111**；job `S-260810-0001` |
-| 3 | 打开 `?demo=repair` 或 `?demo=backend` | 修 Bell 语法说明 / 15 比特零排队能力表（不排队、不烧机时） |
+| 1 | `/` | Bell 归档柱状图主峰 **00/11**；job `G-260809-0018`；lede 含本源双云 |
+| 2 | `?demo=ghz3` | GHZ 主峰 **000/111**；job `S-260810-0001` |
+| 3 | `?demo=repair` / `?demo=backend` | 修 Bell 说明 / 15 比特零排队能力表（不烧机时） |
 
-溯源链接（远程可点）：
-- 量旋 Bell：https://cloud.spinq.cn/circuitDesign/taskResult/61210  
-- 量旋 GHZ：https://cloud.spinq.cn/circuitDesign/taskResult/61216  
-- 本源 Bell job：`724E511297B861472AA2441F90F3D5E6` · 仓库内打开 `evidence/files/originq-bell-result.json` 与 `originq-bell-rest-detail.json` 即可核验 counts / `taskState=3`（控制台：https://console.originqc.com.cn/）
-
-**远程核验三点：**  
+**核验三点：**  
 1）L1 是统一 IR，不是三套 if-else 硬编码。  
 2）本源必须用 **chipId=180**；误用退役 72 会假性「维护中」。  
-3）真机结果均可在云控制台或本仓 JSON 用 job id 复核；Demo 第一屏是归档回放，不扣机时。  
+3）真机结果以云任务页 + 本仓 JSON 为准；Demo 第一屏是归档回放，不扣机时。  
 
-更完整的远程核验清单：`docs/JUDGE_DEMO_SCRIPT.md`。
+完整清单：`docs/JUDGE_DEMO_SCRIPT.md`。
 
 ## 公开态势对照（2026-08-24，公开 Issue + evidence；非官方排名）
 
@@ -40,9 +48,9 @@
 | AphrixZjr | #32 | Origin+SpinQ 多 job | Docker + Web |
 | WayneYu1212 | #69 | 量旋+本源厚证据 | :8765 |
 | mayloveless / tale03 / 2IKK12 / Junkai 等 | 见官方 accepted 列表 | 双云居多 | 各有 Web/CLI |
-| **本队** | **以截止前最后一次 `submission:accepted` 为准** | **量旋 2q+3q + 本源 Bell chip180** | **`./start_demo.sh` → :8765**；踩坑笔记 + 本地 8/8·7/7·9/9 回归 |
+| **本队** | **以截止前最后一次 `submission:accepted` 为准** | **量旋 2q+3q + 本源 Bell chip180** | **云链接 + evidence JSON/截图 + 归档可复现 Demo**；踩坑笔记 + 回归墙 8/8·7/7·9/9 |
 
-> 自动分看隐藏测例；人工分看可溯源 job、L2 远程复现、工程材料。本 commit 含本源成功证据与 chip=180 修复。
+> 自动分看隐藏测例；人工分看可溯源 job、线上 evidence、L2 归档复现。本 commit 含本源成功证据与 chip=180 修复。
 ## 本包相对早期 Issue 的评委入口资产
 
 | 路径 | 作用 |
@@ -119,7 +127,7 @@ shots：100
 归一化结果：evidence/files/originq-bell-result.json
 主峰结论：00/11（counts 00:50, 01:1, 10:4, 11:45；概率约 0.556 / 0.443）
 判定：有效真机（chipId=180）。本地 SDK 轮询曾超时并附带无害 errorMessage「司南系统读取任务失败。」；已用 getTaskDetail 恢复，未重交。
-远程评委核验（无需控制台截图）：打开 originq-bell-result.json 看 counts；打开 originq-bell-rest-detail.json 确认 taskState=3、chipId=180、物理比特 [157,166]。
+线上评委核验（打开仓内文件即可，无需控制台截图）：打开 originq-bell-result.json 看 counts；打开 originq-bell-rest-detail.json 确认 taskState=3、chipId=180、物理比特 [157,166]。
 ```
 
 ### 本源 / 量旋适配踩坑（工程笔记 · 远程可核）
@@ -141,7 +149,7 @@ shots：100
    `G-260802-0004` 仅有 `qreg`、无门 → 不计真机分。有效证据必须是含 H/CNOT 的 Bell/GHZ 任务（见上方 G/S job）。
 
 5. **机时与模式**  
-   成功一发后 `.env` 保持 `LOOMQ_ORIGINQ_MODE=local`，避免评测/本地误打真机。
+   真机成功后默认切回模拟模式（`LOOMQ_ORIGINQ_MODE=local`），避免评测流水线误打真机扣机时。
 
 量旋双平台 + 本源均有可溯源 job；人工真机分仍按规则上限 10（两平台封顶）。本源用于「两家中国云」叙事与适配深度，不是第 11 分。
 
@@ -181,8 +189,8 @@ shots：100
   export PYTHONPATH=starter_kit
 架构说明：starter_kit/docs/ARCHITECTURE.md
 厂商适配踩坑（chip 180 / set_configure / SDK 假失败 / 量旋空电路）：见上文「本源 / 量旋适配踩坑」
-目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「远程评委 5 分钟复现」
-完整使用流程：starter_kit/README.md「一分钟上手」；远程核验清单：docs/JUDGE_DEMO_SCRIPT.md
+目标用户和使用场景：跨平台开发/产品——统一 OpenQASM 中间层，先归档真机主峰再调 Agent；见上文「线上评委核验入口」
+完整使用流程：starter_kit/README.md「一分钟上手」；线上核验清单：docs/JUDGE_DEMO_SCRIPT.md
 
 本地回归数字墙（2026-08-24，解释器 $PY 如上；非隐藏测例、非正式分数）：
   1) "$PY" evaluator.py --level declared --target spinq,braket,originq
